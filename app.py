@@ -5,6 +5,7 @@ import os
 
 app = Flask(__name__)
 TOKENS_FILE = 'tokens.json'
+API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'  # Your API key
 
 # Load and save token functions
 def load_tokens():
@@ -48,28 +49,31 @@ def compare():
     time = data["time"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    url = f"https://api.exchangerate.host/{date}?base={from_currency}&symbols={to_currency}"
+    # Always use EUR as base (due to free tier restriction)
+    url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
     print("API URL:", url)
     print("API response:", response.json())
     json_data = response.json()
 
-    if "rates" not in json_data or to_currency not in json_data["rates"]:
+    if "rates" not in json_data or from_currency not in json_data["rates"] or to_currency not in json_data["rates"]:
         return jsonify({"error": "Could not find a rate for this date or currency."}), 400
 
-    rate = json_data["rates"][to_currency]
+    eur_to_from = json_data["rates"][from_currency]
+    eur_to_to = json_data["rates"][to_currency]
+    actual_rate = eur_to_to / eur_to_from
 
-    market_value = amount * rate
+    market_value = amount * actual_rate
     bank_value = amount * bank_rate
     difference = round(market_value - bank_value, 2)
-    spread_pct = round(((rate - bank_rate) / rate) * 100, 2)
+    spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
     tokens[token] = True
     save_tokens(tokens)
 
     return jsonify({
-        "company_rate": round(rate, 4),
+        "company_rate": round(actual_rate, 4),
         "bank_value": round(bank_value, 2),
         "company_value": round(market_value, 2),
         "difference": difference,
