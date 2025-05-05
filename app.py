@@ -2,10 +2,13 @@ from flask import Flask, request, jsonify, render_template
 import requests
 import json
 import os
+import random
+import string
 
 app = Flask(__name__)
 TOKENS_FILE = 'tokens.json'
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'  # Your API key
+ADMIN_SECRET = 'oceankey'  # Set your admin key here
 
 # Load and save token functions
 def load_tokens():
@@ -80,6 +83,24 @@ def compare():
         "spread_percent": spread_pct,
         "annual_savings": annual_savings
     })
+
+# Admin route to generate multiple tokens
+@app.route('/generate-tokens')
+def generate_tokens():
+    admin = request.args.get("admin")
+    if admin != ADMIN_SECRET:
+        return "Unauthorized", 403
+
+    tokens = load_tokens()
+    new_links = []
+    for _ in range(10):
+        token = 'prospect' + ''.join(random.choices(string.digits, k=5))
+        tokens[token] = False
+        new_links.append(f"https://ocean-fx-tool.onrender.com/?token={token}")
+
+    save_tokens(tokens)
+
+    return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
 # Run the app using Render-compatible settings
 if __name__ == "__main__":
