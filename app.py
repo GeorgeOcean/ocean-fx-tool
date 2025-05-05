@@ -4,13 +4,18 @@ import json
 import os
 import random
 import string
+from datetime import datetime
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 TOKENS_FILE = 'tokens.json'
-API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'  # Your API key
-ADMIN_SECRET = 'oceankey'  # Set your admin key here
+API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
+ADMIN_SECRET = 'oceankey'
+SHEET_NAME = 'FX Submissions'
+GOOGLE_CREDS_FILE = '2e564e79-080b-485b-a8f3-027ab9b35719.json'
 
-# Load and save token functions
+# Load and save tokens
 def load_tokens():
     if not os.path.exists(TOKENS_FILE):
         return {}
@@ -21,7 +26,25 @@ def save_tokens(tokens):
     with open(TOKENS_FILE, 'w') as f:
         json.dump(tokens, f)
 
-# Home route
+# Log to Google Sheet
+def log_to_google_sheet(data):
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name(GOOGLE_CREDS_FILE, scope)
+    client = gspread.authorize(creds)
+    sheet = client.open(SHEET_NAME).sheet1
+
+    sheet.append_row([
+        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        data["token"],
+        data["from"],
+        data["to"],
+        data["amount"],
+        data["bankRate"],
+        data["company_rate"],
+        data["difference"],
+        data["annual_savings"]
+    ])
+
 @app.route('/')
 def home():
     token = request.args.get('token')
@@ -34,7 +57,6 @@ def home():
 
     return render_template('index.html', token=token)
 
-# Compare route
 @app.route('/compare', methods=['POST'])
 def compare():
     data = request.json
@@ -49,14 +71,11 @@ def compare():
     amount = float(data["amount"])
     bank_rate = float(data["bankRate"])
     date = data["date"]
-    time = data["time"]
+    time = data.get("time", "")
     annual_volume = float(data.get("annualVolume", 0))
 
-    # Always use EUR as base (due to free tier restriction)
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
-    print("API URL:", url)
-    print("API response:", response.json())
     json_data = response.json()
 
     if "rates" not in json_data or from_currency not in json_data["rates"] or to_currency not in json_data["rates"]:
@@ -75,16 +94,24 @@ def compare():
     tokens[token] = True
     save_tokens(tokens)
 
-    return jsonify({
+    result = {
+        "token": token,
+        "from": from_currency,
+        "to": to_currency,
+        "amount": amount,
+        "bankRate": bank_rate,
         "company_rate": round(actual_rate, 4),
         "bank_value": round(bank_value, 2),
         "company_value": round(market_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
         "annual_savings": annual_savings
-    })
+    }
 
-# Admin route to generate multiple tokens
+    log_to_google_sheet(result)
+
+    return jsonify(result)
+
 @app.route('/generate-tokens')
 def generate_tokens():
     admin = request.args.get("admin")
@@ -102,7 +129,6 @@ def generate_tokens():
 
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
-# Run the app using Render-compatible settings
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
