@@ -111,7 +111,7 @@
         if (!token) {
             document.getElementById("fx-form").remove();
             document.getElementById("results").innerHTML =
-                "<p style='color:#ff6666'><strong>Missing token in URL.</strong></p>";
+                "<p style='color:#ff6666'><strong>❌ Missing token in URL.</strong></p>";
         }
 
         document.getElementById("fx-form").addEventListener("submit", async function(e) {
@@ -129,9 +129,39 @@
                 const res = await fetch("/compare", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ from, to, amount, bankRate, date, time, annualVolume, token })
+                    body: JSON.stringify({
+                        token,
+                        from,
+                        to,
+                        amount,
+                        bankRate,
+                        date,
+                        time,
+                        annualVolume
+                    })
                 });
 
                 const data = await res.json();
 
                 if (data.error) {
+                    document.getElementById("results").innerHTML =
+                        "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
+                } else {
+                    document.getElementById("results").innerHTML = `
+                        <p><strong>Ocean Capital Exchange Rate:</strong> ${data.company_rate}</p>
+                        <p><strong>Your Bank Gave You:</strong> ${data.bank_value}</p>
+                        <p><strong>We Would Have Given You:</strong> ${data.company_value}</p>
+                        <p><strong>Potential Savings:</strong> ${data.difference}</p>
+                        <p><strong>Margin:</strong> ${data.spread_percent}%</p>
+                        <p><strong>Projected Annual Savings:</strong> ${data.annual_savings}</p>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById("results").innerHTML =
+                    "<p style='color:#ff6666'><strong>Something went wrong. Please try again later.</strong></p>";
+            }
+        });
+    </script>
+</body>
+</html>
+
