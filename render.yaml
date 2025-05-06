@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ocean-fx-tool
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: GOOGLE_CREDS_JSON
+        sync: false
+
