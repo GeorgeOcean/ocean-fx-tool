@@ -127,20 +127,22 @@
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+       <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
 
-        document.getElementById("fx-form").addEventListener("submit", async function(e) {
-            e.preventDefault();
+    document.getElementById("fx-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
 
-            const from = document.getElementById("from").value;
-            const to = document.getElementById("to").value;
-            const date = document.getElementById("date").value;
-            const time = document.getElementById("time").value;
-            const amount = document.getElementById("amount").value;
-            const bankRate = document.getElementById("bankRate").value;
-            const annualVolume = document.getElementById("annualVolume").value;
+        const from = document.getElementById("from").value;
+        const to = document.getElementById("to").value;
+        const date = document.getElementById("date").value;
+        const time = document.getElementById("time").value;
+        const amount = document.getElementById("amount").value;
+        const bankRate = document.getElementById("bankRate").value;
+        const annualVolume = document.getElementById("annualVolume").value;
 
+        try {
             const res = await fetch("/compare", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -148,6 +150,8 @@
             });
 
             const data = await res.json();
+
+            console.log("Response from /compare:", data);
 
             if (data.error) {
                 document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
@@ -162,7 +166,13 @@
                     <p><strong>Approximate Time of Transaction:</strong> ${time}</p>
                 `;
             }
-        });
+        } catch (err) {
+            console.error("Fetch error:", err);
+            document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>Something went wrong. Please try again later.</strong></p>";
+        }
+    });
+</script>
+
     </script>
 
 </body>
