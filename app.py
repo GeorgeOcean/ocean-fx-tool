@@ -50,8 +50,8 @@ def log_to_google_sheet(data):
         data["token"],
         data["from"],
         data["to"],
-        data["amount_sold"],        # → Amount
-        data["amount_bought"],      # → Amount received
+        data["amount_sold"],
+        data["amount_bought"],
         data["bankRate"],
         data["company_rate"],
         data["difference"],
@@ -91,7 +91,6 @@ def compare():
     annual_volume = float(data.get("annualVolume", 0))
 
     actual_rate = amount_bought / amount_sold
-
     market_value = amount_sold * actual_rate
     bank_value = amount_sold * bank_rate
     difference = round(market_value - bank_value, 2)
@@ -102,21 +101,18 @@ def compare():
     save_tokens(tokens)
 
     result = {
-def log_to_google_sheet(data):
-    sheet = get_sheet(LOG_SHEET_TAB)
-    sheet.append_row([
-        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        data["token"],
-        data["from"],
-        data["to"],
-        data["amount_sold"],        # → Amount
-        data["amount_bought"],      # → Amount received
-        data["bankRate"],
-        data["company_rate"],
-        data["difference"],
-        data["annual_savings"]
-    ])
-
+        "token": token,
+        "from": from_currency,
+        "to": to_currency,
+        "amount_sold": amount_sold,
+        "amount_bought": amount_bought,
+        "bankRate": bank_rate,
+        "company_rate": round(actual_rate, 4),
+        "bank_value": round(bank_value, 2),
+        "company_value": round(market_value, 2),
+        "difference": difference,
+        "spread_percent": spread_pct,
+        "annual_savings": annual_savings
     }
 
     log_to_google_sheet(result)
@@ -147,4 +143,3 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
