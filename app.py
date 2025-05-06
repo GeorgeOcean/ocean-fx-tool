@@ -13,9 +13,9 @@ app = Flask(__name__)
 # --- Constants ---
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
-SHEET_NAME = 'FX Submissions'  # Your spreadsheet name
-LOG_SHEET_TAB = 'Sheet1'       # Tab for logging comparisons
-TOKENS_TAB = 'Tokens'          # Tab for storing tokens
+SHEET_NAME = 'FX Submissions'      # Your Google Sheet name
+LOG_SHEET_TAB = 'Sheet1'           # Tab for logging results
+TOKENS_TAB = 'Tokens'              # Tab for managing tokens
 
 # --- Google Sheets Helpers ---
 def get_sheet(tab_name):
@@ -84,19 +84,23 @@ def compare():
 
     from_currency = data["from"]
     to_currency = data["to"]
-    amount_sold = float(data["amountSold"])
-    amount_bought = float(data["amountBought"])
+    amount_sold = float(data["amountSold"])       # What the user is sending
+    amount_bought = float(data["amountBought"])   # What the user received
     bank_rate = float(data["bankRate"])
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
+    # Calculate user's actual FX rate
     actual_rate = amount_bought / amount_sold
-    market_value = amount_sold * actual_rate
+
+    # What they would get using Ocean vs. their bank
+    company_value = amount_sold * actual_rate
     bank_value = amount_sold * bank_rate
-    difference = round(market_value - bank_value, 2)
+    difference = round(company_value - bank_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount_sold) * annual_volume, 2) if amount_sold > 0 else 0
 
+    # Mark token as used
     tokens[token] = True
     save_tokens(tokens)
 
@@ -109,7 +113,7 @@ def compare():
         "bankRate": bank_rate,
         "company_rate": round(actual_rate, 4),
         "bank_value": round(bank_value, 2),
-        "company_value": round(market_value, 2),
+        "company_value": round(company_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
         "annual_savings": annual_savings
