@@ -86,7 +86,8 @@
             <input type="text" id="to" placeholder="To Currency (e.g. USD)" required>
             <input type="date" id="date" required>
             <input type="text" id="time" placeholder="Approximate time of transaction (optional)">
-            <input type="number" id="amount" placeholder="Amount Exchanged" required>
+            <input type="number" id="amountSold" placeholder="Amount Sold (what you gave)" required>
+            <input type="number" id="amountBought" placeholder="Amount Bought (what you received)" required>
             <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
             <select id="annualVolume" required>
                 <option value="">How much do you exchange per year?</option>
@@ -121,7 +122,8 @@
             const to = document.getElementById("to").value;
             const date = document.getElementById("date").value;
             const time = document.getElementById("time").value;
-            const amount = document.getElementById("amount").value;
+            const amountSold = document.getElementById("amountSold").value;
+            const amountBought = document.getElementById("amountBought").value;
             const bankRate = document.getElementById("bankRate").value;
             const annualVolume = document.getElementById("annualVolume").value;
 
@@ -130,10 +132,11 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        token,  // ✅ this sends the token
+                        token,
                         from,
                         to,
-                        amount,
+                        amountSold,
+                        amountBought,
                         bankRate,
                         date,
                         time,
@@ -164,6 +167,7 @@
     </script>
 </body>
 </html>
+
 
 
 
