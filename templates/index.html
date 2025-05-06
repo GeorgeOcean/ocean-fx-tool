@@ -151,12 +151,14 @@
                         "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
                 } else {
                     document.getElementById("results").innerHTML = `
-                        <p><strong>Ocean Capital Exchange Rate:</strong> ${data.company_rate}</p>
-                        <p><strong>Your Bank Gave You:</strong> ${data.bank_value}</p>
-                        <p><strong>We Would Have Given You:</strong> ${data.company_value}</p>
-                        <p><strong>Potential Savings:</strong> ${data.difference}</p>
-                        <p><strong>Margin:</strong> ${data.spread_percent}%</p>
-                        <p><strong>Projected Annual Savings:</strong> ${data.annual_savings}</p>
+                        <p><strong>📉 Bank's FX Rate:</strong> ${data.bankRate}</p>
+                        <p><strong>📈 Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
+                        <p><strong>💰 Bank Gave You:</strong> £${data.bank_value}</p>
+                        <p><strong>🧮 We Would Have Given You:</strong> £${data.company_value}</p>
+                        <p style="color:#f88070;"><strong>😬 Lost This Time:</strong> £${data.difference}</p>
+                        <p><strong>📊 Bank Margin:</strong> ${data.spread_percent}%</p>
+                        <p style="color:#20DED6;"><strong>🔥 Annual Loss at This Rate:</strong> £${data.annual_savings}</p>
+                        <p><em>That’s money left on the table — let’s change that.</em></p>
                     `;
                 }
             } catch (err) {
@@ -167,6 +169,7 @@
     </script>
 </body>
 </html>
+
 
 
 
