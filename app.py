@@ -102,18 +102,21 @@ def compare():
     save_tokens(tokens)
 
     result = {
-        "token": token,
-        "from": from_currency,
-        "to": to_currency,
-        "amount_sold": amount_sold,
-        "amount_bought": amount_bought,
-        "bankRate": bank_rate,
-        "company_rate": round(actual_rate, 4),
-        "bank_value": round(bank_value, 2),
-        "company_value": round(market_value, 2),
-        "difference": difference,
-        "spread_percent": spread_pct,
-        "annual_savings": annual_savings
+def log_to_google_sheet(data):
+    sheet = get_sheet(LOG_SHEET_TAB)
+    sheet.append_row([
+        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        data["token"],
+        data["from"],
+        data["to"],
+        data["amount_sold"],        # → Amount
+        data["amount_bought"],      # → Amount received
+        data["bankRate"],
+        data["company_rate"],
+        data["difference"],
+        data["annual_savings"]
+    ])
+
     }
 
     log_to_google_sheet(result)
