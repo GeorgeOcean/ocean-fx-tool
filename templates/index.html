@@ -1,45 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>FX Comparison</title>
+    <title>Ocean Capital Exchange – FX Rate Comparison</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #111132;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header img {
+            max-width: 300px;
+            height: auto;
+        }
+
+        h2 {
+            color: #20DED6;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input, select {
+            background-color: #1e1e3f;
+            color: #ffffff;
+            border: 1px solid #444;
+        }
+
+        button {
+            background-color: #20DED6;
+            color: #111132;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1ec5bf;
+        }
+
+        #results {
+            margin-top: 25px;
+            padding: 15px;
+            background: #1e1e3f;
+            border: 1px solid #333;
+            border-radius: 5px;
+        }
+
+        p {
+            margin: 6px 0;
+        }
+    </style>
 </head>
 <body>
-    <h2>FX Comparison</h2>
+    <header>
+        <img src="/static/logo.png" alt="Ocean Capital Exchange">
+    </header>
 
-    <form id="fx-form">
-        <label for="from">From Currency:</label>
-        <input id="from" name="from" value="USD" required><br><br>
+    <div class="container">
+        <h2>FX Savings Comparison Tool</h2>
 
-        <label for="to">To Currency:</label>
-        <input id="to" name="to" value="EUR" required><br><br>
+        <form id="fx-form">
+            <input type="text" id="from" placeholder="From Currency (e.g. GBP)" required>
+            <input type="text" id="to" placeholder="To Currency (e.g. USD)" required>
+            <input type="date" id="date" required>
+            <input type="text" id="time" placeholder="Approximate time of transaction (optional)">
+            <input type="number" id="amount" placeholder="Amount Exchanged" required>
+            <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
+            <select id="annualVolume" required>
+                <option value="">How much do you exchange per year?</option>
+                <option value="250000">£250k</option>
+                <option value="500000">£500k</option>
+                <option value="1000000">£1 million</option>
+                <option value="2500000">£2.5 million</option>
+                <option value="5000000">£5 million</option>
+                <option value="10000000">£10 million</option>
+                <option value="25000000">£25 million or more</option>
+            </select>
+            <button type="submit">Compare</button>
+        </form>
 
-        <label for="date">Date:</label>
-        <input id="date" name="date" type="date" required><br><br>
-
-        <label for="time">Time:</label>
-        <input id="time" name="time" type="time"><br><br>
-
-        <label for="amount">Amount:</label>
-        <input id="amount" name="amount" type="number" step="0.01" required><br><br>
-
-        <label for="bankRate">Bank Rate:</label>
-        <input id="bankRate" name="bankRate" type="number" step="0.0001" required><br><br>
-
-        <label for="annualVolume">Annual Volume:</label>
-        <input id="annualVolume" name="annualVolume" type="number"><br><br>
-
-        <button type="submit">Compare</button>
-    </form>
-
-    <div id="results" style="margin-top: 30px;"></div>
+        <div id="results"></div>
+    </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
 
         if (!token) {
-            document.body.innerHTML = "<h2 style='color:red;'>❌ Missing token in URL.</h2>";
+            document.getElementById("fx-form").remove();
+            document.getElementById("results").innerHTML =
+                "<p style='color:#ff6666'><strong>Missing token in URL.</strong></p>";
         }
 
         document.getElementById("fx-form").addEventListener("submit", async function(e) {
@@ -57,41 +129,9 @@
                 const res = await fetch("/compare", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        token,
-                        from,
-                        to,
-                        amount,
-                        bankRate,
-                        date,
-                        time,
-                        annualVolume
-                    })
+                    body: JSON.stringify({ from, to, amount, bankRate, date, time, annualVolume, token })
                 });
 
                 const data = await res.json();
 
                 if (data.error) {
-                    document.getElementById("results").innerHTML =
-                        `<p style="color:red;"><strong>❌ ${data.error}</strong></p>`;
-                } else {
-                    document.getElementById("results").innerHTML = `
-                        <p><strong>✅ Ocean Capital Exchange Rate:</strong> ${data.company_rate}</p>
-                        <p><strong>Your Bank Gave You:</strong> ${data.bank_value}</p>
-                        <p><strong>We Would Have Given You:</strong> ${data.company_value}</p>
-                        <p><strong>Potential Savings:</strong> ${data.difference}</p>
-                        <p><strong>Margin:</strong> ${data.spread_percent}%</p>
-                        <p><strong>Projected Annual Savings:</strong> ${data.annual_savings}</p>
-                        <p><strong>Approximate Time of Transaction:</strong> ${time}</p>
-                    `;
-                }
-            } catch (err) {
-                console.error("Fetch error:", err);
-                document.getElementById("results").innerHTML =
-                    "<p style='color:red;'>❌ Something went wrong. Please try again later.</p>";
-            }
-        });
-    </script>
-</body>
-</html>
-
