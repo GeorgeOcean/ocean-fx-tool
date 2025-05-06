@@ -130,7 +130,7 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        token,
+                        token,  // ✅ this sends the token
                         from,
                         to,
                         amount,
@@ -164,4 +164,6 @@
     </script>
 </body>
 </html>
+
+
 
