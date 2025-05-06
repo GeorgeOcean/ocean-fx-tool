@@ -50,8 +50,8 @@ def log_to_google_sheet(data):
         data["token"],
         data["from"],
         data["to"],
-        data["amount_sold"],
-        data["amount_bought"],
+        data["amount_sold"],        # → Amount
+        data["amount_bought"],      # → Amount received
         data["bankRate"],
         data["company_rate"],
         data["difference"],
@@ -90,7 +90,6 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # Compute actual FX rate based on what the user bought/sold
     actual_rate = amount_bought / amount_sold
 
     market_value = amount_sold * actual_rate
@@ -145,3 +144,4 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
