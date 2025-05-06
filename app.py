@@ -13,9 +13,9 @@ app = Flask(__name__)
 # --- Constants ---
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
-SHEET_NAME = 'FX Submissions'  # The name of your spreadsheet
-LOG_SHEET_TAB = 'Sheet1'       # The tab for logging comparisons
-TOKENS_TAB = 'Tokens'          # The tab for storing tokens
+SHEET_NAME = 'FX Submissions'  # Your spreadsheet name
+LOG_SHEET_TAB = 'Sheet1'       # Tab for logging comparisons
+TOKENS_TAB = 'Tokens'          # Tab for storing tokens
 
 # --- Google Sheets Helpers ---
 def get_sheet(tab_name):
@@ -50,7 +50,8 @@ def log_to_google_sheet(data):
         data["token"],
         data["from"],
         data["to"],
-        data["amount"],
+        data["amount_sold"],
+        data["amount_bought"],
         data["bankRate"],
         data["company_rate"],
         data["difference"],
@@ -83,27 +84,20 @@ def compare():
 
     from_currency = data["from"]
     to_currency = data["to"]
-    amount = float(data["amount"])
+    amount_sold = float(data["amountSold"])
+    amount_bought = float(data["amountBought"])
     bank_rate = float(data["bankRate"])
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
-    response = requests.get(url)
-    json_data = response.json()
+    # Compute actual FX rate based on what the user bought/sold
+    actual_rate = amount_bought / amount_sold
 
-    if "rates" not in json_data or from_currency not in json_data["rates"] or to_currency not in json_data["rates"]:
-        return jsonify({"error": "Could not find a rate for this date or currency."}), 400
-
-    eur_to_from = json_data["rates"][from_currency]
-    eur_to_to = json_data["rates"][to_currency]
-    actual_rate = eur_to_to / eur_to_from
-
-    market_value = amount * actual_rate
-    bank_value = amount * bank_rate
+    market_value = amount_sold * actual_rate
+    bank_value = amount_sold * bank_rate
     difference = round(market_value - bank_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
-    annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
+    annual_savings = round((difference / amount_sold) * annual_volume, 2) if amount_sold > 0 else 0
 
     tokens[token] = True
     save_tokens(tokens)
@@ -112,7 +106,8 @@ def compare():
         "token": token,
         "from": from_currency,
         "to": to_currency,
-        "amount": amount,
+        "amount_sold": amount_sold,
+        "amount_bought": amount_bought,
         "bankRate": bank_rate,
         "company_rate": round(actual_rate, 4),
         "bank_value": round(bank_value, 2),
