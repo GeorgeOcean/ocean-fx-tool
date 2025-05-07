@@ -19,6 +19,7 @@
 
         header {
             margin-bottom: 20px;
+            text-align: center;
         }
 
         header img {
@@ -70,29 +71,35 @@
             border-radius: 5px;
         }
 
-        .toggle-group {
+        .amount-row {
             display: flex;
-            justify-content: space-between;
+            gap: 10px;
             margin-bottom: 10px;
         }
 
-        .toggle-group label {
+        .amount-row input[type="number"] {
             flex: 1;
-            text-align: center;
+        }
+
+        .toggle-inline {
+            display: flex;
+            gap: 5px;
             background: #1e1e3f;
             padding: 10px;
-            cursor: pointer;
             border: 1px solid #444;
+            border-radius: 5px;
+            align-items: center;
         }
 
-        .toggle-group input[type="radio"] {
-            display: none;
+        .toggle-inline label {
+            background: transparent;
+            color: #fff;
+            padding: 0 6px;
+            cursor: pointer;
         }
 
-        .toggle-group input:checked + label {
-            background-color: #20DED6;
-            color: #111132;
-            font-weight: bold;
+        .toggle-inline input[type="radio"] {
+            margin-right: 4px;
         }
     </style>
 </head>
@@ -105,19 +112,23 @@
         <h2>FX Savings Comparison Tool</h2>
 
         <form id="fx-form">
-            <div class="toggle-group">
-                <input type="radio" name="mode" id="sell" value="sell" checked>
-                <label for="sell">Selling</label>
-                <input type="radio" name="mode" id="buy" value="buy">
-                <label for="buy">Buying</label>
-            </div>
-
             <input type="text" id="from" placeholder="From Currency (e.g. GBP)" required>
             <input type="text" id="to" placeholder="To Currency (e.g. USD)" required>
             <input type="date" id="date" required>
             <input type="text" id="time" placeholder="Approximate time of transaction (optional)">
-            <input type="number" id="amount" placeholder="Amount" required>
+
+            <div class="amount-row">
+                <div class="toggle-inline">
+                    <input type="radio" name="mode" id="sell" value="sell" checked>
+                    <label for="sell">Sell</label>
+                    <input type="radio" name="mode" id="buy" value="buy">
+                    <label for="buy">Buy</label>
+                </div>
+                <input type="number" id="amount" placeholder="Amount" required>
+            </div>
+
             <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
+
             <select id="annualVolume" required>
                 <option value="">How much do you exchange per year?</option>
                 <option value="250000">£250k</option>
@@ -128,6 +139,7 @@
                 <option value="10000000">£10 million</option>
                 <option value="25000000">£25 million or more</option>
             </select>
+
             <button type="submit">Compare</button>
         </form>
 
@@ -175,4 +187,5 @@
     </script>
 </body>
 </html>
+
 
