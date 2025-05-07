@@ -50,7 +50,7 @@ def log_to_google_sheet(data):
         data["token"],
         data["from"],
         data["to"],
-        data["amount_sold"],
+        data["amount_paid_ocean"],
         data["amount_bought"],
         data["bankRate"],
         data["company_rate"],
@@ -84,7 +84,7 @@ def compare():
 
     from_currency = data["from"]
     to_currency = data["to"]
-    amount_sold = float(data["amountSold"])
+    amount_bought = float(data["amountBought"])  # The desired amount to receive
     bank_rate = float(data["bankRate"])
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
@@ -101,16 +101,13 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
-    # --- Comparison Calculations ---
-    company_value = amount_sold * actual_rate
-    bank_value = amount_sold * bank_rate
-    amount_bought = company_value  # what user would have received with Ocean
-
-    difference = round(company_value - bank_value, 2)
+    # --- Calculate the cost to buy the desired amount ---
+    bank_cost = amount_bought / bank_rate
+    ocean_cost = amount_bought / actual_rate
+    difference = round(bank_cost - ocean_cost, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
-    annual_savings = round((difference / amount_sold) * annual_volume, 2) if amount_sold > 0 else 0
+    annual_savings = round((difference / ocean_cost) * annual_volume, 2) if ocean_cost > 0 else 0
 
-    # Mark token as used
     tokens[token] = True
     save_tokens(tokens)
 
@@ -118,12 +115,11 @@ def compare():
         "token": token,
         "from": from_currency,
         "to": to_currency,
-        "amount_sold": amount_sold,
-        "amount_bought": round(amount_bought, 2),
+        "amount_bought": amount_bought,
+        "amount_paid_bank": round(bank_cost, 2),
+        "amount_paid_ocean": round(ocean_cost, 2),
         "bankRate": bank_rate,
         "company_rate": round(actual_rate, 4),
-        "bank_value": round(bank_value, 2),
-        "company_value": round(company_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
         "annual_savings": annual_savings
