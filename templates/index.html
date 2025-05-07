@@ -18,13 +18,15 @@
         }
 
         header {
-            text-align: center;
             margin-bottom: 20px;
         }
 
         header img {
-            max-width: 300px;
+            width: 100%;
+            max-width: 100%;
             height: auto;
+            display: block;
+            margin: 0 auto;
         }
 
         h2 {
@@ -95,11 +97,11 @@
     </style>
 </head>
 <body>
-    <header>
-        <img src="/static/logo.png" alt="Ocean Capital Exchange">
-    </header>
-
     <div class="container">
+        <header>
+            <img src="/static/logo.png" alt="Ocean Capital Exchange">
+        </header>
+
         <h2>FX Savings Comparison Tool</h2>
 
         <form id="fx-form">
