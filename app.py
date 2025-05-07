@@ -13,9 +13,9 @@ app = Flask(__name__)
 # --- Constants ---
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
-SHEET_NAME = 'FX Submissions'      # Your Google Sheet name
-LOG_SHEET_TAB = 'Sheet1'           # Tab for logging results
-TOKENS_TAB = 'Tokens'              # Tab for managing tokens
+SHEET_NAME = 'FX Submissions'
+LOG_SHEET_TAB = 'Sheet1'
+TOKENS_TAB = 'Tokens'
 
 # --- Google Sheets Helpers ---
 def get_sheet(tab_name):
@@ -84,18 +84,28 @@ def compare():
 
     from_currency = data["from"]
     to_currency = data["to"]
-    amount_sold = float(data["amountSold"])       # What the user is sending
-    amount_bought = float(data["amountBought"])   # What the user received
+    amount_sold = float(data["amountSold"])
     bank_rate = float(data["bankRate"])
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # Calculate user's actual FX rate
-    actual_rate = amount_bought / amount_sold
+    # --- Get real FX rate from API ---
+    url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
+    response = requests.get(url)
+    json_data = response.json()
 
-    # What they would get using Ocean vs. their bank
+    if "rates" not in json_data or from_currency not in json_data["rates"] or to_currency not in json_data["rates"]:
+        return jsonify({"error": "Could not find a rate for this date or currency."}), 400
+
+    eur_to_from = json_data["rates"][from_currency]
+    eur_to_to = json_data["rates"][to_currency]
+    actual_rate = eur_to_to / eur_to_from
+
+    # --- Comparison Calculations ---
     company_value = amount_sold * actual_rate
     bank_value = amount_sold * bank_rate
+    amount_bought = company_value  # what user would have received with Ocean
+
     difference = round(company_value - bank_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount_sold) * annual_volume, 2) if amount_sold > 0 else 0
@@ -109,7 +119,7 @@ def compare():
         "from": from_currency,
         "to": to_currency,
         "amount_sold": amount_sold,
-        "amount_bought": amount_bought,
+        "amount_bought": round(amount_bought, 2),
         "bankRate": bank_rate,
         "company_rate": round(actual_rate, 4),
         "bank_value": round(bank_value, 2),
@@ -147,3 +157,4 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
