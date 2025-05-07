@@ -160,13 +160,13 @@
                 document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
             } else {
                 document.getElementById("results").innerHTML = `
-                    <p><strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
-                    <p><strong>Your Bank Rate:</strong> ${data.bankRate}</p>
-                    <p><strong>Bank Value:</strong> £${data.bank_value}</p>
-                    <p><strong>Ocean Value:</strong> £${data.company_value}</p>
-                    <p><strong>Savings:</strong> £${data.difference}</p>
-                    <p><strong>Margin:</strong> ${data.spread_percent}%</p>
-                    <p><strong>Projected Annual Savings:</strong> £${data.annual_savings}</p>
+                    <p>📉 <strong>Bank's FX Rate:</strong> ${data.bankRate}</p>
+                    <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
+                    <p>💰 <strong>Bank Gave You:</strong> £${data.bank_value}</p>
+                    <p>🧮 <strong>We Would Have Given You:</strong> £${data.company_value}</p>
+                    <p>😬 <strong>Lost This Time:</strong> £${data.difference}</p>
+                    <p>📊 <strong>Bank Margin:</strong> ${data.spread_percent}%</p>
+                    <p>🔥 <strong>What you could save over the year with Ocean:</strong> £${data.annual_savings}</p>
                 `;
             }
         });
