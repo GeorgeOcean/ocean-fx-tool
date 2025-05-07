@@ -10,14 +10,13 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 
-# --- Constants ---
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'
 LOG_SHEET_TAB = 'Sheet1'
 TOKENS_TAB = 'Tokens'
 
-# --- Google Sheets Helpers ---
+# --- Google Sheets ---
 def get_sheet(tab_name):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_dict(
@@ -27,7 +26,7 @@ def get_sheet(tab_name):
     client = gspread.authorize(creds)
     return client.open(SHEET_NAME).worksheet(tab_name)
 
-# --- Token Handling ---
+# --- Token handling ---
 def load_tokens():
     sheet = get_sheet(TOKENS_TAB)
     tokens = {}
@@ -42,7 +41,7 @@ def save_tokens(tokens):
     for token, used in tokens.items():
         sheet.append_row([token, str(used).upper()])
 
-# --- Logging Submissions ---
+# --- Logging ---
 def log_to_google_sheet(data):
     sheet = get_sheet(LOG_SHEET_TAB)
     sheet.append_row([
@@ -50,7 +49,7 @@ def log_to_google_sheet(data):
         data["token"],
         data["from"],
         data["to"],
-        data["amount_paid_ocean"],
+        data["amount_sold"],
         data["amount_bought"],
         data["bankRate"],
         data["company_rate"],
@@ -82,14 +81,15 @@ def compare():
     if not token or token not in tokens or tokens[token]:
         return jsonify({"error": "Invalid or used token"}), 403
 
+    mode = data.get("mode", "sell")
     from_currency = data["from"]
     to_currency = data["to"]
-    amount_bought = float(data["amountBought"])  # The desired amount to receive
+    amount = float(data["amount"])
     bank_rate = float(data["bankRate"])
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # --- Get real FX rate from API ---
+    # Fetch FX rate
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
     json_data = response.json()
@@ -101,12 +101,21 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
-    # --- Calculate the cost to buy the desired amount ---
-    bank_cost = amount_bought / bank_rate
-    ocean_cost = amount_bought / actual_rate
-    difference = round(bank_cost - ocean_cost, 2)
+    # Logic based on mode
+    if mode == "sell":
+        amount_sold = amount
+        amount_bought = amount_sold * actual_rate
+        bank_value = amount_sold * bank_rate
+        company_value = amount_bought
+    else:  # mode == "buy"
+        amount_bought = amount
+        amount_sold = amount_bought / actual_rate
+        bank_value = amount_bought / bank_rate
+        company_value = amount_sold
+
+    difference = round(bank_value - company_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
-    annual_savings = round((difference / ocean_cost) * annual_volume, 2) if ocean_cost > 0 else 0
+    annual_savings = round((difference / company_value) * annual_volume, 2) if company_value > 0 else 0
 
     tokens[token] = True
     save_tokens(tokens)
@@ -115,11 +124,12 @@ def compare():
         "token": token,
         "from": from_currency,
         "to": to_currency,
-        "amount_bought": amount_bought,
-        "amount_paid_bank": round(bank_cost, 2),
-        "amount_paid_ocean": round(ocean_cost, 2),
+        "amount_sold": round(amount_sold, 2),
+        "amount_bought": round(amount_bought, 2),
         "bankRate": bank_rate,
         "company_rate": round(actual_rate, 4),
+        "bank_value": round(bank_value, 2),
+        "company_value": round(company_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
         "annual_savings": annual_savings
@@ -136,7 +146,6 @@ def generate_tokens():
 
     tokens = load_tokens()
     new_links = []
-
     for _ in range(10):
         while True:
             token = 'prospect' + ''.join(random.choices(string.digits, k=5))
@@ -146,11 +155,11 @@ def generate_tokens():
         new_links.append(f"https://ocean-fx-tool.onrender.com/?token={token}")
 
     save_tokens(tokens)
-
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
-# --- Run Server ---
+# --- Run ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
