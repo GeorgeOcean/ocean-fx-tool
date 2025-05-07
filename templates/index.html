@@ -100,6 +100,29 @@
         .amount-row input[type="number"] {
             flex: 1;
         }
+
+        .cta-text {
+            margin-top: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .cta-button {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 14px 24px;
+            background-color: #20DED6;
+            color: #111132;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background-color: #1ec5bf;
+        }
     </style>
 </head>
 <body>
@@ -180,6 +203,13 @@
                     <p>😬 <strong>Lost This Time:</strong> £${data.difference}</p>
                     <p>📊 <strong>Bank Margin:</strong> ${data.spread_percent}%</p>
                     <p>🔥 <strong>What you could save over the year with Ocean:</strong> £${data.annual_savings}</p>
+                    <div class="cta-text">
+                        🔓 Open a free account to access your savings now — no obligation to trade.
+                        <br>
+                        <a class="cta-button" href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF" target="_blank">
+                            Open an Account – It’s Free
+                        </a>
+                    </div>
                 `;
             }
         });
