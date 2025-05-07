@@ -68,8 +68,29 @@
             border-radius: 5px;
         }
 
-        p {
-            margin: 6px 0;
+        .toggle-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .toggle-group label {
+            flex: 1;
+            text-align: center;
+            background: #1e1e3f;
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #444;
+        }
+
+        .toggle-group input[type="radio"] {
+            display: none;
+        }
+
+        .toggle-group input:checked + label {
+            background-color: #20DED6;
+            color: #111132;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -82,12 +103,18 @@
         <h2>FX Savings Comparison Tool</h2>
 
         <form id="fx-form">
+            <div class="toggle-group">
+                <input type="radio" name="mode" id="sell" value="sell" checked>
+                <label for="sell">Selling</label>
+                <input type="radio" name="mode" id="buy" value="buy">
+                <label for="buy">Buying</label>
+            </div>
+
             <input type="text" id="from" placeholder="From Currency (e.g. GBP)" required>
             <input type="text" id="to" placeholder="To Currency (e.g. USD)" required>
             <input type="date" id="date" required>
             <input type="text" id="time" placeholder="Approximate time of transaction (optional)">
-            <input type="number" id="amountSold" placeholder="Amount Sold (what you gave)" required>
-            <input type="number" id="amountBought" placeholder="Amount Bought (what you received)" required>
+            <input type="number" id="amount" placeholder="Amount" required>
             <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
             <select id="annualVolume" required>
                 <option value="">How much do you exchange per year?</option>
@@ -109,68 +136,40 @@
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
 
-        if (!token) {
-            document.getElementById("fx-form").remove();
-            document.getElementById("results").innerHTML =
-                "<p style='color:#ff6666'><strong>❌ Missing token in URL.</strong></p>";
-        }
-
         document.getElementById("fx-form").addEventListener("submit", async function(e) {
             e.preventDefault();
 
+            const mode = document.querySelector('input[name="mode"]:checked').value;
             const from = document.getElementById("from").value;
             const to = document.getElementById("to").value;
             const date = document.getElementById("date").value;
             const time = document.getElementById("time").value;
-            const amountSold = document.getElementById("amountSold").value;
-            const amountBought = document.getElementById("amountBought").value;
-            const bankRate = document.getElementById("bankRate").value;
-            const annualVolume = document.getElementById("annualVolume").value;
+            const amount = parseFloat(document.getElementById("amount").value);
+            const bankRate = parseFloat(document.getElementById("bankRate").value);
+            const annualVolume = parseFloat(document.getElementById("annualVolume").value);
 
-            try {
-                const res = await fetch("/compare", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        token,
-                        from,
-                        to,
-                        amountSold,
-                        amountBought,
-                        bankRate,
-                        date,
-                        time,
-                        annualVolume
-                    })
-                });
+            const res = await fetch("/compare", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mode, from, to, date, time, amount, bankRate, annualVolume, token })
+            });
 
-                const data = await res.json();
+            const data = await res.json();
 
-                if (data.error) {
-                    document.getElementById("results").innerHTML =
-                        "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
-                } else {
-                    document.getElementById("results").innerHTML = `
-                        <p><strong>📉 Bank's FX Rate:</strong> ${data.bankRate}</p>
-                        <p><strong>📈 Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
-                        <p><strong>💰 Bank Gave You:</strong> £${data.bank_value}</p>
-                        <p><strong>🧮 We Would Have Given You:</strong> £${data.company_value}</p>
-                        <p style="color:#f88070;"><strong>😬 Lost This Time:</strong> £${data.difference}</p>
-                        <p><strong>📊 Bank Margin:</strong> ${data.spread_percent}%</p>
-                        <p style="color:#20DED6;"><strong>🔥 Annual Loss at This Rate:</strong> £${data.annual_savings}</p>
-                        <p><em>That’s money left on the table — let’s change that.</em></p>
-                    `;
-                }
-            } catch (err) {
-                document.getElementById("results").innerHTML =
-                    "<p style='color:#ff6666'><strong>Something went wrong. Please try again later.</strong></p>";
+            if (data.error) {
+                document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
+            } else {
+                document.getElementById("results").innerHTML = `
+                    <p><strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
+                    <p><strong>Your Bank Rate:</strong> ${data.bankRate}</p>
+                    <p><strong>Bank Value:</strong> £${data.bank_value}</p>
+                    <p><strong>Ocean Value:</strong> £${data.company_value}</p>
+                    <p><strong>Savings:</strong> £${data.difference}</p>
+                    <p><strong>Margin:</strong> ${data.spread_percent}%</p>
+                    <p><strong>Projected Annual Savings:</strong> £${data.annual_savings}</p>
+                `;
             }
         });
     </script>
 </body>
 </html>
-
-
-
-
-
