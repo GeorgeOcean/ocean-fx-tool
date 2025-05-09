@@ -23,11 +23,10 @@
         }
 
         header img {
-            width: 100%;
-            max-width: 300px;
+            max-width: 250px;
             height: auto;
-            display: block;
             margin: 0 auto;
+            display: block;
         }
 
         h2 {
@@ -185,8 +184,8 @@
                     });
                 };
 
-                document.getElementById("results").innerHTML = 
-                    `<p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
+                document.getElementById("results").innerHTML = `
+                    <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
                     <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
                     <p>💸 <strong>Your bank/broker gave you:</strong> ${formatCurrency(data.bank_value)}</p>
                     <p>🚀 <strong>Ocean would have given you:</strong> ${formatCurrency(data.company_value)}</p>
@@ -204,7 +203,8 @@
                         <a href="mailto:info@oceancapitalexchange.com?subject=FX%20Callback%20Request" style="color:#20DED6; text-decoration:underline;">
                             Request a callback
                         </a>
-                    </p>`;
+                    </p>
+                `;
             }
         });
     </script>
