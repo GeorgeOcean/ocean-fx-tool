@@ -1,9 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Ocean Capital Exchange – FX Rate Comparison</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -26,10 +24,8 @@
 
         header img {
             width: 100%;
-            max-width: 600px;
-            max-height: 100px;
+            max-width: 300px;
             height: auto;
-            object-fit: contain;
             display: block;
             margin: 0 auto;
         }
@@ -125,7 +121,7 @@
 
         <form id="fx-form">
             <div class="inline-group">
-                <input type="number" id="amount" placeholder="Amount" required min="0">
+                <input type="number" id="amount" placeholder="Amount" required>
                 <div class="toggle-group">
                     <input type="radio" name="mode" id="sell" value="sell" checked>
                     <label for="sell">Sell</label>
@@ -163,8 +159,8 @@
             e.preventDefault();
 
             const mode = document.querySelector('input[name="mode"]:checked').value;
-            const from = document.getElementById("from").value.trim();
-            const to = document.getElementById("to").value.trim();
+            const from = document.getElementById("from").value;
+            const to = document.getElementById("to").value;
             const date = document.getElementById("date").value;
             const time = document.getElementById("time").value;
             const amount = parseFloat(document.getElementById("amount").value);
@@ -179,10 +175,8 @@
 
             const data = await res.json();
 
-            const resultsDiv = document.getElementById("results");
-
             if (data.error) {
-                resultsDiv.innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
+                document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
             } else {
                 const formatCurrency = (value) => {
                     return '£' + Number(value).toLocaleString(undefined, {
@@ -191,8 +185,8 @@
                     });
                 };
 
-                resultsDiv.innerHTML = `
-                    <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
+                document.getElementById("results").innerHTML = 
+                    `<p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
                     <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
                     <p>💸 <strong>Your bank/broker gave you:</strong> ${formatCurrency(data.bank_value)}</p>
                     <p>🚀 <strong>Ocean would have given you:</strong> ${formatCurrency(data.company_value)}</p>
@@ -210,8 +204,7 @@
                         <a href="mailto:info@oceancapitalexchange.com?subject=FX%20Callback%20Request" style="color:#20DED6; text-decoration:underline;">
                             Request a callback
                         </a>
-                    </p>
-                `;
+                    </p>`;
             }
         });
     </script>
