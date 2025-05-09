@@ -60,22 +60,29 @@ def log_to_google_sheet(data):
 # --- Routes ---
 @app.route('/')
 def home():
-    # ✅ TEMPORARILY DISABLED TOKEN CHECK
-    token = request.args.get('token', 'test-token')
+    token = request.args.get('token')
+    tokens = load_tokens()
+
+    if not token:
+        return "Missing token.", 403
+    if token not in tokens:
+        return "Invalid token.", 403
+    if tokens[token]:
+        return "This token has already been used.", 403
+
     return render_template('index.html', token=token)
 
 @app.route('/compare', methods=['POST'])
 def compare():
     data = request.json
-    token = data.get("token", "test-token")
+    token = data.get("token")
     tokens = load_tokens()
 
-    # Validate token unless testing
-    if token != "test-token":
-        if token not in tokens or tokens[token]:
-            return jsonify({"error": "Invalid or used token"}), 403
-        tokens[token] = True
-        save_tokens(tokens)
+    if not token or token not in tokens or tokens[token]:
+        return jsonify({"error": "Invalid or used token"}), 403
+
+    tokens[token] = True
+    save_tokens(tokens)
 
     from_currency = data["from"]
     to_currency = data["to"]
@@ -143,4 +150,3 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
