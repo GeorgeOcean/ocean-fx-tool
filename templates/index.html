@@ -18,16 +18,15 @@
         }
 
         header {
-            margin-bottom: 20px;
             text-align: center;
+            margin-bottom: 20px;
         }
 
         header img {
-            width: 100%;
-            max-width: 100%;
+            max-width: 250px;
             height: auto;
-            display: block;
             margin: 0 auto;
+            display: block;
         }
 
         h2 {
@@ -52,6 +51,41 @@
             border: 1px solid #444;
         }
 
+        .inline-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .inline-group input {
+            flex: 2;
+        }
+
+        .toggle-group {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .toggle-group input[type="radio"] {
+            display: none;
+        }
+
+        .toggle-group label {
+            flex: 1;
+            text-align: center;
+            background: #1e1e3f;
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #444;
+        }
+
+        .toggle-group input:checked + label {
+            background-color: #20DED6;
+            color: #111132;
+            font-weight: bold;
+        }
+
         button {
             background-color: #20DED6;
             color: #111132;
@@ -71,86 +105,35 @@
             border-radius: 5px;
         }
 
-        .amount-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-
-        .toggle-inline {
-            display: flex;
-            gap: 10px;
-            background: #1e1e3f;
-            padding: 10px;
-            border: 1px solid #444;
-            border-radius: 5px;
-            white-space: nowrap;
-        }
-
-        .toggle-inline input[type="radio"] {
-            margin-right: 4px;
-        }
-
-        .toggle-inline label {
-            color: #ffffff;
-            cursor: pointer;
-        }
-
-        .amount-row input[type="number"] {
-            flex: 1;
-        }
-
-        .cta-text {
-            margin-top: 25px;
-            font-size: 16px;
-            line-height: 1.5;
-        }
-
-        .cta-button {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 14px 24px;
-            background-color: #20DED6;
-            color: #111132;
-            font-weight: bold;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 6px;
-            transition: background-color 0.3s ease;
-        }
-
-        .cta-button:hover {
-            background-color: #1ec5bf;
+        p {
+            margin: 6px 0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <img src="/static/logo.png" alt="Ocean Capital Exchange">
-        </header>
+    <header>
+        <img src="/static/logo.png" alt="Ocean Capital Exchange">
+    </header>
 
+    <div class="container">
         <h2>FX Savings Comparison Tool</h2>
 
         <form id="fx-form">
-            <input type="text" id="from" placeholder="From Currency (e.g. GBP)" required>
-            <input type="text" id="to" placeholder="To Currency (e.g. USD)" required>
-            <input type="date" id="date" required>
-            <input type="text" id="time" placeholder="Approximate time of transaction (optional)">
-
-            <div class="amount-row">
-                <div class="toggle-inline">
+            <div class="inline-group">
+                <input type="number" id="amount" placeholder="Amount" required>
+                <div class="toggle-group">
                     <input type="radio" name="mode" id="sell" value="sell" checked>
                     <label for="sell">Sell</label>
                     <input type="radio" name="mode" id="buy" value="buy">
                     <label for="buy">Buy</label>
                 </div>
-                <input type="number" id="amount" placeholder="Amount" required>
             </div>
 
-            <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
-
+            <input type="text" id="from" placeholder="From Currency (e.g. GBP)" required>
+            <input type="text" id="to" placeholder="To Currency (e.g. USD)" required>
+            <input type="date" id="date" required>
+            <input type="text" id="time" placeholder="Approximate time of transaction (optional)">
+            <input type="number" id="bankRate" placeholder="Bank/Broker Exchange Rate" step="0.0001" required>
             <select id="annualVolume" required>
                 <option value="">How much do you exchange per year?</option>
                 <option value="250000">£250k</option>
@@ -161,7 +144,6 @@
                 <option value="10000000">£10 million</option>
                 <option value="25000000">£25 million or more</option>
             </select>
-
             <button type="submit">Compare</button>
         </form>
 
@@ -195,26 +177,37 @@
             if (data.error) {
                 document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
             } else {
+                const formatCurrency = (value) => {
+                    return '£' + Number(value).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                };
+
                 document.getElementById("results").innerHTML = `
-                    <p>📉 <strong>Bank's FX Rate:</strong> ${data.bankRate}</p>
+                    <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
                     <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
-                    <p>💰 <strong>Bank Gave You:</strong> £${data.bank_value}</p>
-                    <p>🧮 <strong>We Would Have Given You:</strong> £${data.company_value}</p>
-                    <p>😬 <strong>Lost This Time:</strong> £${data.difference}</p>
-                    <p>📊 <strong>Bank Margin:</strong> ${data.spread_percent}%</p>
-                    <p>🔥 <strong>What you could save over the year with Ocean:</strong> £${data.annual_savings}</p>
-                    <div class="cta-text">
-                        🔓 Open a free account to access your savings now — no obligation to trade.
-                        <br>
-                        <a class="cta-button" href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF" target="_blank">
-                            Open an Account – It’s Free
+                    <p>💸 <strong>Your bank/broker gave you:</strong> ${formatCurrency(data.bank_value)}</p>
+                    <p>🚀 <strong>Ocean would have given you:</strong> ${formatCurrency(data.company_value)}</p>
+                    <p>😬 <strong>You missed out on:</strong> ${formatCurrency(data.difference)}</p>
+                    <p>📊 <strong>Bank/broker margin:</strong> ${data.spread_percent}%</p>
+                    <p>🔥 <strong>Estimated annual savings with Ocean:</strong> ${formatCurrency(data.annual_savings)}</p>
+                    <br>
+                    <a href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF" target="_blank">
+                        <button style="margin-top: 10px; width: 100%; background-color: #20DED6; color: #111132; font-weight: bold; padding: 12px; border: none; border-radius: 5px; cursor: pointer;">
+                            🔓 Open Your Free Account
+                        </button>
+                    </a>
+                    <p style="margin-top: 20px; text-align: center;">
+                        💬 <strong>Want help understanding your results?</strong><br>
+                        <a href="mailto:info@oceancapitalexchange.com?subject=FX%20Callback%20Request" style="color:#20DED6; text-decoration:underline;">
+                            Request a callback
                         </a>
-                    </div>
+                    </p>
                 `;
             }
         });
     </script>
 </body>
 </html>
-
 
