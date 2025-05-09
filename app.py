@@ -45,12 +45,22 @@ def save_tokens(tokens):
 # --- Logging Submissions ---
 def log_to_google_sheet(data):
     sheet = get_sheet(LOG_SHEET_TAB)
+
+    mode = data.get("mode", "sell")
+    if mode == "buy":
+        amount_bought = data["amount"]
+        amount_sold = round(data["amount"] / data["company_rate"], 2)
+    else:
+        amount_sold = data["amount"]
+        amount_bought = round(data["amount"] * data["company_rate"], 2)
+
     sheet.append_row([
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         data["token"],
         data["from"],
         data["to"],
-        data["amount"],
+        amount_sold,
+        amount_bought,
         data["bankRate"],
         data["company_rate"],
         data["difference"],
@@ -103,7 +113,6 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
-    # 🧮 Correct Buy/Sell logic
     if mode == "buy":
         market_value = amount / actual_rate
         bank_value = amount / bank_rate
@@ -126,7 +135,8 @@ def compare():
         "company_value": round(market_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
-        "annual_savings": annual_savings
+        "annual_savings": annual_savings,
+        "mode": mode
     }
 
     log_to_google_sheet(result)
