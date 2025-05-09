@@ -90,6 +90,7 @@ def compare():
     bank_rate = float(data["bankRate"])
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
+    mode = data.get("mode", "sell")
 
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
@@ -102,8 +103,14 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
-    market_value = amount * actual_rate
-    bank_value = amount * bank_rate
+    # 🧮 Correct Buy/Sell logic
+    if mode == "buy":
+        market_value = amount / actual_rate
+        bank_value = amount / bank_rate
+    else:
+        market_value = amount * actual_rate
+        bank_value = amount * bank_rate
+
     difference = round(market_value - bank_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
