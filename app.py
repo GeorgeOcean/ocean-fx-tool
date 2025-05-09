@@ -114,15 +114,17 @@ def compare():
     actual_rate = eur_to_to / eur_to_from
 
     if mode == "buy":
-        market_value = amount / actual_rate
+        # Buying amount in target currency
+        company_value = amount / actual_rate
         bank_value = amount / bank_rate
     else:
-        market_value = amount * actual_rate
+        # Selling amount in base currency
+        company_value = amount * actual_rate
         bank_value = amount * bank_rate
 
-    difference = round(market_value - bank_value, 2)
+    savings = round(bank_value - company_value, 2) if mode == "buy" else round(company_value - bank_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
-    annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
+    annual_savings = round((savings / amount) * annual_volume, 2) if amount > 0 else 0
 
     result = {
         "token": token,
@@ -132,8 +134,8 @@ def compare():
         "bankRate": bank_rate,
         "company_rate": round(actual_rate, 4),
         "bank_value": round(bank_value, 2),
-        "company_value": round(market_value, 2),
-        "difference": difference,
+        "company_value": round(company_value, 2),
+        "difference": savings,
         "spread_percent": spread_pct,
         "annual_savings": annual_savings,
         "mode": mode
@@ -167,3 +169,4 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
