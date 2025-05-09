@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Ocean Capital Exchange – FX Rate Comparison</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -23,7 +25,6 @@
         }
 
         header img {
-            header img {
             width: 100%;
             max-width: 600px;
             height: auto;
@@ -117,12 +118,12 @@
         <img src="/static/logo.png" alt="Ocean Capital Exchange">
     </header>
 
-    <div class="container">
+    <main class="container">
         <h2>FX Savings Comparison Tool</h2>
 
         <form id="fx-form">
             <div class="inline-group">
-                <input type="number" id="amount" placeholder="Amount" required>
+                <input type="number" id="amount" placeholder="Amount" required min="0">
                 <div class="toggle-group">
                     <input type="radio" name="mode" id="sell" value="sell" checked>
                     <label for="sell">Sell</label>
@@ -150,7 +151,7 @@
         </form>
 
         <div id="results"></div>
-    </div>
+    </main>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
@@ -160,8 +161,8 @@
             e.preventDefault();
 
             const mode = document.querySelector('input[name="mode"]:checked').value;
-            const from = document.getElementById("from").value;
-            const to = document.getElementById("to").value;
+            const from = document.getElementById("from").value.trim();
+            const to = document.getElementById("to").value.trim();
             const date = document.getElementById("date").value;
             const time = document.getElementById("time").value;
             const amount = parseFloat(document.getElementById("amount").value);
@@ -176,8 +177,10 @@
 
             const data = await res.json();
 
+            const resultsDiv = document.getElementById("results");
+
             if (data.error) {
-                document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
+                resultsDiv.innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
             } else {
                 const formatCurrency = (value) => {
                     return '£' + Number(value).toLocaleString(undefined, {
@@ -186,7 +189,7 @@
                     });
                 };
 
-                document.getElementById("results").innerHTML = `
+                resultsDiv.innerHTML = `
                     <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
                     <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
                     <p>💸 <strong>Your bank/broker gave you:</strong> ${formatCurrency(data.bank_value)}</p>
@@ -212,4 +215,3 @@
     </script>
 </body>
 </html>
-
