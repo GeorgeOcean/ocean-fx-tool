@@ -10,7 +10,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 
-# --- Constants ---
+# --- Config ---
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'
@@ -27,7 +27,7 @@ def get_sheet(tab_name):
     client = gspread.authorize(creds)
     return client.open(SHEET_NAME).worksheet(tab_name)
 
-# --- Token Handling ---
+# --- Token Management ---
 def load_tokens():
     sheet = get_sheet(TOKENS_TAB)
     tokens = {}
@@ -42,27 +42,20 @@ def save_tokens(tokens):
     for token, used in tokens.items():
         sheet.append_row([token, str(used).upper()])
 
-# --- Logging Submissions ---
+# --- Logging ---
 def log_to_google_sheet(data):
     sheet = get_sheet(LOG_SHEET_TAB)
-
-    mode = data.get("mode", "sell")
-    if mode == "buy":
-        amount_bought = data["amount"]
-        amount_sold = round(data["amount"] / data["company_rate"], 2)
-    else:
-        amount_sold = data["amount"]
-        amount_bought = round(data["amount"] * data["company_rate"], 2)
-
     sheet.append_row([
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         data["token"],
         data["from"],
         data["to"],
-        amount_sold,
-        amount_bought,
+        data["mode"],
+        data["amount"],
         data["bankRate"],
         data["company_rate"],
+        data["bank_value"],
+        data["company_value"],
         data["difference"],
         data["annual_savings"]
     ])
@@ -91,16 +84,17 @@ def compare():
     if not token or token not in tokens or tokens[token]:
         return jsonify({"error": "Invalid or used token"}), 403
 
-    tokens[token] = True
-    save_tokens(tokens)
-
-    from_currency = data["from"]
-    to_currency = data["to"]
-    amount = float(data["amount"])
-    bank_rate = float(data["bankRate"])
-    date = data["date"]
-    annual_volume = float(data.get("annualVolume", 0))
-    mode = data.get("mode", "sell")
+    try:
+        mode = data["mode"]
+        from_currency = data["from"].upper()
+        to_currency = data["to"].upper()
+        amount = float(data["amount"])
+        bank_rate = float(data["bankRate"])
+        date = data["date"]
+        time = data.get("time", "")
+        annual_volume = float(data.get("annualVolume", 0))
+    except (KeyError, ValueError):
+        return jsonify({"error": "Invalid input values."}), 400
 
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
@@ -113,35 +107,36 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
-    if mode == "buy":
-        # Buying amount in target currency
-        company_value = amount / actual_rate
-        bank_value = amount / bank_rate
-    else:
-        # Selling amount in base currency
-        company_value = amount * actual_rate
+    if mode == "sell":
         bank_value = amount * bank_rate
+        company_value = amount * actual_rate
+    else:  # buy
+        bank_value = amount / bank_rate
+        company_value = amount / actual_rate
 
-    savings = round(bank_value - company_value, 2) if mode == "buy" else round(company_value - bank_value, 2)
+    difference = round(company_value - bank_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
-    annual_savings = round((savings / amount) * annual_volume, 2) if amount > 0 else 0
+    annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
     result = {
         "token": token,
+        "mode": mode,
         "from": from_currency,
         "to": to_currency,
         "amount": amount,
-        "bankRate": bank_rate,
-        "company_rate": round(actual_rate, 4),
+        "bankRate": round(bank_rate, 6),
+        "company_rate": round(actual_rate, 6),
         "bank_value": round(bank_value, 2),
         "company_value": round(company_value, 2),
-        "difference": savings,
+        "difference": difference,
         "spread_percent": spread_pct,
-        "annual_savings": annual_savings,
-        "mode": mode
+        "annual_savings": annual_savings
     }
 
     log_to_google_sheet(result)
+    tokens[token] = True
+    save_tokens(tokens)
+
     return jsonify(result)
 
 @app.route('/generate-tokens')
@@ -165,8 +160,7 @@ def generate_tokens():
 
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
-# --- Run Server ---
+# --- Run App ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
