@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Ocean Capital Exchange – FX Rate Comparison</title>
+    <title>Ocean Capital FX Comparison</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -19,7 +19,7 @@
 
         header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 0;
         }
 
         header img {
@@ -33,7 +33,7 @@
         h2 {
             color: #20DED6;
             text-align: center;
-            margin-top: 0px;
+            margin-top: 0;
         }
 
         input, select, button {
@@ -94,8 +94,13 @@
             cursor: pointer;
         }
 
-        button:hover {
+        button:hover:enabled {
             background-color: #1ec5bf;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
         }
 
         #results {
@@ -118,7 +123,6 @@
 
     <div class="container">
         <h2>Ocean Capital FX Comparison</h2>
-
 
         <form id="fx-form">
             <div class="inline-group">
@@ -159,6 +163,12 @@
         document.getElementById("fx-form").addEventListener("submit", async function(e) {
             e.preventDefault();
 
+            const compareButton = this.querySelector("button");
+            compareButton.disabled = true;
+            compareButton.innerText = "Comparing...";
+
+            document.getElementById("results").innerHTML = "<p>🔄 Calculating your savings...</p>";
+
             const mode = document.querySelector('input[name="mode"]:checked').value;
             const from = document.getElementById("from").value;
             const to = document.getElementById("to").value;
@@ -176,16 +186,16 @@
 
             const data = await res.json();
 
+            const formatCurrency = (value) => {
+                return '£' + Number(value).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            };
+
             if (data.error) {
                 document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
             } else {
-                const formatCurrency = (value) => {
-                    return '£' + Number(value).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                };
-
                 document.getElementById("results").innerHTML = `
                     <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
                     <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
@@ -208,7 +218,11 @@
                     </p>
                 `;
             }
+
+            compareButton.disabled = false;
+            compareButton.innerText = "Compare";
         });
     </script>
 </body>
 </html>
+
