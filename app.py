@@ -14,8 +14,8 @@ app = Flask(__name__)
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'  # Google Sheet name
-LOG_SHEET_TAB = 'Sheet1'       # Tab for logging comparisons
-TOKENS_TAB = 'Tokens'          # Tab storing tokens
+LOG_SHEET_TAB = 'Sheet1'       # Logging tab
+TOKENS_TAB = 'Tokens'          # Token tab
 
 # --- Google Sheets Helpers ---
 def get_sheet(tab_name):
@@ -42,7 +42,7 @@ def save_tokens(tokens):
     for token, used in tokens.items():
         sheet.append_row([token, str(used).upper()])
 
-# --- Logging Function ---
+# --- Log Submission ---
 def log_to_google_sheet(data):
     sheet = get_sheet(LOG_SHEET_TAB)
     sheet.append_row([
@@ -92,6 +92,7 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
+    # Fetch FX rate
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
     json_data = response.json()
@@ -103,10 +104,11 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
+    # Calculate values based on mode
     if mode == "sell":
         bank_value = amount * bank_rate
         company_value = amount * actual_rate
-    else:  # buying currency
+    else:  # buy
         bank_value = amount / bank_rate
         company_value = amount / actual_rate
 
@@ -114,6 +116,7 @@ def compare():
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
+    # Mark token as used
     tokens[token] = True
     save_tokens(tokens)
 
@@ -156,7 +159,7 @@ def generate_tokens():
 
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
-# --- Run Server ---
+# --- Run ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
