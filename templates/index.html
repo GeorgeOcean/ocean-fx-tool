@@ -17,55 +17,22 @@
             padding: 20px;
         }
 
+        header {
+            text-align: center;
+            margin-bottom: 0;
+        }
+
         header img {
             width: 100%;
             max-width: 600px;
+            height: auto;
             display: block;
-            margin: 0 auto;
         }
 
         h2 {
             color: #20DED6;
             text-align: center;
-            margin-top: 0;
-        }
-
-        form {
             margin-top: 10px;
-        }
-
-        .inline-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .inline-group input[type="number"] {
-            flex: 1;
-        }
-
-        .inline-group .toggle-group {
-            display: flex;
-            gap: 5px;
-        }
-
-        .toggle-group input[type="radio"] {
-            display: none;
-        }
-
-        .toggle-group label {
-            background-color: #1e1e3f;
-            color: #fff;
-            padding: 10px;
-            border: 1px solid #444;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        .toggle-group input:checked + label {
-            background-color: #20DED6;
-            color: #111132;
-            font-weight: bold;
         }
 
         input, select, button {
@@ -95,6 +62,36 @@
             background-color: #1ec5bf;
         }
 
+        .inline-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-group input[type="radio"] {
+            display: none;
+        }
+
+        .toggle-group label {
+            flex: 1;
+            text-align: center;
+            background: #1e1e3f;
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #444;
+        }
+
+        .toggle-group input:checked + label {
+            background-color: #20DED6;
+            color: #111132;
+            font-weight: bold;
+        }
+
         #results {
             margin-top: 25px;
             padding: 15px;
@@ -102,154 +99,142 @@
             border: 1px solid #333;
             border-radius: 5px;
         }
-
-        .loading {
-            text-align: center;
-            color: #20DED6;
-            margin-top: 15px;
-        }
-
-        a {
-            color: #20DED6;
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
-    <header>
-        <img src="/static/logo.png" alt="Ocean Capital Exchange">
-    </header>
+<header>
+    <img src="/static/logo.png" alt="Ocean Capital Exchange">
+</header>
 
-    <div class="container">
-        <h2>Ocean Capital FX Comparison</h2>
+<div class="container">
+    <h2>Ocean Capital FX Comparison</h2>
 
-        <form id="fx-form">
-            <div class="inline-group">
-                <input type="number" id="amount" placeholder="Amount" required>
-                <div class="toggle-group">
-                    <input type="radio" name="mode" id="sell" value="sell" checked>
-                    <label for="sell">Sell</label>
-                    <input type="radio" name="mode" id="buy" value="buy">
-                    <label for="buy">Buy</label>
-                </div>
+    <form id="fx-form">
+        <div class="inline-group">
+            <input type="number" id="amount" placeholder="Amount" required>
+            <div class="toggle-group">
+                <input type="radio" name="mode" id="sell" value="sell" checked>
+                <label for="sell">Selling</label>
+                <input type="radio" name="mode" id="buy" value="buy">
+                <label for="buy">Buying</label>
             </div>
+        </div>
 
-            <select id="from" required>
-                <option value="">From Currency</option>
-                <option value="GBP">GBP - British Pound</option>
-                <option value="USD">USD - US Dollar</option>
-                <option value="EUR">EUR - Euro</option>
-                <option value="ZAR">ZAR - South African Rand</option>
-                <option value="AED">AED - UAE Dirham</option>
-                <option value="AUD">AUD - Australian Dollar</option>
-                <option value="CAD">CAD - Canadian Dollar</option>
-                <option value="JPY">JPY - Japanese Yen</option>
-                <option value="CHF">CHF - Swiss Franc</option>
-                <option value="CNY">CNY - Chinese Yuan</option>
-                <option value="NZD">NZD - New Zealand Dollar</option>
-            </select>
+        <select id="from" required>
+            <option value="">From Currency</option>
+            <option value="GBP">GBP</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="AED">AED</option>
+            <option value="ZAR">ZAR</option>
+        </select>
 
-            <select id="to" required>
-                <option value="">To Currency</option>
-                <option value="GBP">GBP - British Pound</option>
-                <option value="USD">USD - US Dollar</option>
-                <option value="EUR">EUR - Euro</option>
-                <option value="ZAR">ZAR - South African Rand</option>
-                <option value="AED">AED - UAE Dirham</option>
-                <option value="AUD">AUD - Australian Dollar</option>
-                <option value="CAD">CAD - Canadian Dollar</option>
-                <option value="JPY">JPY - Japanese Yen</option>
-                <option value="CHF">CHF - Swiss Franc</option>
-                <option value="CNY">CNY - Chinese Yuan</option>
-                <option value="NZD">NZD - New Zealand Dollar</option>
-            </select>
+        <select id="to" required>
+            <option value="">To Currency</option>
+            <option value="GBP">GBP</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="AED">AED</option>
+            <option value="ZAR">ZAR</option>
+        </select>
 
-            <input type="date" id="date" required>
+        <input type="date" id="date" required>
 
-            <select id="time">
-                <option value="">Select approximate time (optional)</option>
-                <option value="Morning">Morning (6am–12pm)</option>
-                <option value="Afternoon">Afternoon (12pm–6pm)</option>
-                <option value="Evening">Evening (6pm–12am)</option>
-                <option value="Night">Night (12am–6am)</option>
-            </select>
+        <select id="time">
+            <option value="">Time of transaction (optional)</option>
+            <option>Morning</option>
+            <option>Midday</option>
+            <option>Afternoon</option>
+            <option>Evening</option>
+        </select>
 
-            <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
+        <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
 
-            <select id="annualVolume" required>
-                <option value="">How much do you exchange per year?</option>
-                <option value="250000">£250k</option>
-                <option value="500000">£500k</option>
-                <option value="1000000">£1 million</option>
-                <option value="2500000">£2.5 million</option>
-                <option value="5000000">£5 million</option>
-                <option value="10000000">£10 million</option>
-                <option value="25000000">£25 million or more</option>
-            </select>
+        <select id="annualVolume" required>
+            <option value="">Annual FX Volume</option>
+            <option value="250000">£250k</option>
+            <option value="500000">£500k</option>
+            <option value="1000000">£1 million</option>
+            <option value="2500000">£2.5 million</option>
+            <option value="5000000">£5 million</option>
+            <option value="10000000">£10 million</option>
+            <option value="25000000">£25 million or more</option>
+        </select>
 
-            <button type="submit">Compare</button>
-            <div class="loading" id="loading" style="display:none;">⏳ Calculating your savings...</div>
-        </form>
+        <button type="submit" id="submit-btn">Compare</button>
+    </form>
 
-        <div id="results"></div>
-    </div>
+    <div id="results"></div>
+</div>
 
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
 
-        document.getElementById("fx-form").addEventListener("submit", async function(e) {
-            e.preventDefault();
-            document.getElementById("loading").style.display = "block";
-            document.getElementById("results").innerHTML = "";
+    document.getElementById("fx-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
 
-            const mode = document.querySelector('input[name="mode"]:checked').value;
-            const from = document.getElementById("from").value;
-            const to = document.getElementById("to").value;
-            const date = document.getElementById("date").value;
-            const time = document.getElementById("time").value;
-            const amount = parseFloat(document.getElementById("amount").value);
-            const bankRate = parseFloat(document.getElementById("bankRate").value);
-            const annualVolume = parseFloat(document.getElementById("annualVolume").value);
+        const submitBtn = document.getElementById("submit-btn");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Comparing...";
 
-            const res = await fetch("/compare", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ mode, from, to, date, time, amount, bankRate, annualVolume, token })
-            });
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const from = document.getElementById("from").value.toUpperCase();
+        const to = document.getElementById("to").value.toUpperCase();
+        const date = document.getElementById("date").value;
+        const time = document.getElementById("time").value;
+        const amount = parseFloat(document.getElementById("amount").value);
+        const bankRate = parseFloat(document.getElementById("bankRate").value);
+        const annualVolume = parseFloat(document.getElementById("annualVolume").value);
 
-            const data = await res.json();
-            document.getElementById("loading").style.display = "none";
-
-            if (data.error) {
-                document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
-            } else {
-                let bankLine, oceanLine, diffLine;
-
-                if (data.mode === "buy") {
-                    bankLine = `<p>💸 <strong>Your bank/broker charged you:</strong> £${data.bank_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
-                    oceanLine = `<p>💡 <strong>Ocean would have charged you:</strong> £${data.company_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
-                    diffLine = `<p>💰 <strong>You could have saved:</strong> £${data.difference.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
-                } else {
-                    bankLine = `<p>💸 <strong>Your bank/broker gave you:</strong> £${data.bank_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
-                    oceanLine = `<p>🚀 <strong>Ocean would have given you:</strong> £${data.company_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
-                    diffLine = `<p>😬 <strong>You missed out on:</strong> £${data.difference.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
-                }
-
-                document.getElementById("results").innerHTML = `
-                    <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
-                    <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
-                    ${bankLine}
-                    ${oceanLine}
-                    ${diffLine}
-                    <p>📊 <strong>Bank/broker margin:</strong> ${data.spread_percent}%</p>
-                    <p>🔥 <strong>Estimated annual savings with Ocean:</strong> £${data.annual_savings.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                    <p>🔓 <a href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF" target="_blank"><strong>Open a free account to access your savings now — no obligation to trade</strong></a></p>
-                    <p>💬 <a href="mailto:info@oceancapitalexchange.com?subject=Callback Request">Want help understanding your results? Request a callback</a></p>
-                `;
-            }
+        const res = await fetch("/compare", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode, from, to, date, time, amount, bankRate, annualVolume, token })
         });
-    </script>
+
+        const data = await res.json();
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Compare";
+
+        if (data.error) {
+            document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
+        } else {
+            const formatter = new Intl.NumberFormat('en-UK', { style: 'currency', currency: 'GBP' });
+
+            const resultText = mode === 'buy' ? `
+                <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
+                <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
+                <p>💸 <strong>Your bank/broker charged you:</strong> ${formatter.format(data.bank_value)}</p>
+                <p>🚀 <strong>Ocean would have charged you:</strong> ${formatter.format(data.company_value)}</p>
+                <p>😬 <strong>You missed out on:</strong> ${formatter.format(data.difference)}</p>
+                <p>📊 <strong>Bank/broker margin:</strong> ${data.spread_percent}%</p>
+                <p>🔥 <strong>Estimated annual savings with Ocean:</strong> ${formatter.format(data.annual_savings)}</p>
+            ` : `
+                <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
+                <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
+                <p>💰 <strong>Your bank/broker gave you:</strong> ${formatter.format(data.bank_value)}</p>
+                <p>🧮 <strong>Ocean would have given you:</strong> ${formatter.format(data.company_value)}</p>
+                <p>😬 <strong>You missed out on:</strong> ${formatter.format(data.difference)}</p>
+                <p>📊 <strong>Bank/broker margin:</strong> ${data.spread_percent}%</p>
+                <p>🔥 <strong>Estimated annual savings with Ocean:</strong> ${formatter.format(data.annual_savings)}</p>
+            `;
+
+            document.getElementById("results").innerHTML = resultText + `
+                <div style="margin-top: 25px; padding: 15px; background: #1e1e3f; border: 1px solid #333; border-radius: 5px;">
+                    <p style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">
+                        🔓 <a href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF" target="_blank" style="color: #20DED6; text-decoration: none;">
+                            Open a free account to access your savings now
+                        </a>
+                    </p>
+                    <p style="font-size: 14px; margin-top: 0; margin-bottom: 10px;">No obligation to trade.</p>
+                    <p>💬 <a href="mailto:info@oceancapitalexchange.com?subject=Callback Request" style="color: #20DED6; text-decoration: underline;">
+                        Want help understanding your results? Request a callback
+                    </a></p>
+                </div>`;
+        }
+    });
+</script>
 </body>
 </html>
 
