@@ -13,9 +13,9 @@ app = Flask(__name__)
 # --- Constants ---
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
-SHEET_NAME = 'FX Submissions'  # Google Sheet name
-LOG_SHEET_TAB = 'Sheet1'       # Logging tab
-TOKENS_TAB = 'Tokens'          # Token tab
+SHEET_NAME = 'FX Submissions'
+LOG_SHEET_TAB = 'Sheet1'
+TOKENS_TAB = 'Tokens'
 
 # --- Google Sheets Helpers ---
 def get_sheet(tab_name):
@@ -92,7 +92,6 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # Fetch FX rate
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
     json_data = response.json()
@@ -104,7 +103,6 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
-    # Calculate values based on mode
     if mode == "sell":
         bank_value = amount * bank_rate
         company_value = amount * actual_rate
@@ -112,11 +110,11 @@ def compare():
         bank_value = amount / bank_rate
         company_value = amount / actual_rate
 
-    difference = round(company_value - bank_value, 2)
+    # ✅ FIXED: correct savings calculation
+    difference = round(bank_value - company_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
-    # Mark token as used
     tokens[token] = True
     save_tokens(tokens)
 
