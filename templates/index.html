@@ -165,7 +165,15 @@
             </select>
 
             <input type="date" id="date" required>
-            <input type="text" id="time" placeholder="Approximate time of transaction (optional)">
+
+            <select id="time">
+                <option value="">Select approximate time (optional)</option>
+                <option value="Morning">Morning (6am–12pm)</option>
+                <option value="Afternoon">Afternoon (12pm–6pm)</option>
+                <option value="Evening">Evening (6pm–12am)</option>
+                <option value="Night">Night (12am–6am)</option>
+            </select>
+
             <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
 
             <select id="annualVolume" required>
