@@ -13,27 +13,58 @@
 
         .container {
             max-width: 600px;
-            margin: 40px auto;
+            margin: 0 auto;
             padding: 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 0;
         }
 
         header img {
             width: 100%;
             max-width: 600px;
-            height: auto;
             display: block;
-            margin: 0 auto;
         }
 
         h2 {
             color: #20DED6;
             text-align: center;
             margin-top: 0;
+        }
+
+        form {
+            margin-top: 10px;
+        }
+
+        .inline-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .inline-group input[type="number"] {
+            flex: 1;
+        }
+
+        .inline-group .toggle-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .toggle-group input[type="radio"] {
+            display: none;
+        }
+
+        .toggle-group label {
+            background-color: #1e1e3f;
+            color: #fff;
+            padding: 10px;
+            border: 1px solid #444;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .toggle-group input:checked + label {
+            background-color: #20DED6;
+            color: #111132;
+            font-weight: bold;
         }
 
         input, select, button {
@@ -52,41 +83,6 @@
             border: 1px solid #444;
         }
 
-        .inline-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .inline-group input {
-            flex: 2;
-        }
-
-        .toggle-group {
-            flex: 1;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .toggle-group input[type="radio"] {
-            display: none;
-        }
-
-        .toggle-group label {
-            flex: 1;
-            text-align: center;
-            background: #1e1e3f;
-            padding: 10px;
-            cursor: pointer;
-            border: 1px solid #444;
-        }
-
-        .toggle-group input:checked + label {
-            background-color: #20DED6;
-            color: #111132;
-            font-weight: bold;
-        }
-
         button {
             background-color: #20DED6;
             color: #111132;
@@ -94,13 +90,8 @@
             cursor: pointer;
         }
 
-        button:hover:enabled {
+        button:hover {
             background-color: #1ec5bf;
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: wait;
         }
 
         #results {
@@ -111,8 +102,15 @@
             border-radius: 5px;
         }
 
-        p {
-            margin: 6px 0;
+        .loading {
+            text-align: center;
+            color: #20DED6;
+            margin-top: 15px;
+        }
+
+        a {
+            color: #20DED6;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -139,7 +137,8 @@
             <input type="text" id="to" placeholder="To Currency (e.g. USD)" required>
             <input type="date" id="date" required>
             <input type="text" id="time" placeholder="Approximate time of transaction (optional)">
-            <input type="number" id="bankRate" placeholder="Bank/Broker Exchange Rate" step="0.0001" required>
+            <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
+
             <select id="annualVolume" required>
                 <option value="">How much do you exchange per year?</option>
                 <option value="250000">£250k</option>
@@ -150,7 +149,9 @@
                 <option value="10000000">£10 million</option>
                 <option value="25000000">£25 million or more</option>
             </select>
+
             <button type="submit">Compare</button>
+            <div class="loading" id="loading" style="display:none;">⏳ Calculating your savings...</div>
         </form>
 
         <div id="results"></div>
@@ -162,16 +163,12 @@
 
         document.getElementById("fx-form").addEventListener("submit", async function(e) {
             e.preventDefault();
-
-            const compareButton = this.querySelector("button");
-            compareButton.disabled = true;
-            compareButton.innerText = "Comparing...";
-
-            document.getElementById("results").innerHTML = "<p>🔄 Calculating your savings...</p>";
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("results").innerHTML = "";
 
             const mode = document.querySelector('input[name="mode"]:checked').value;
-            const from = document.getElementById("from").value;
-            const to = document.getElementById("to").value;
+            const from = document.getElementById("from").value.toUpperCase();
+            const to = document.getElementById("to").value.toUpperCase();
             const date = document.getElementById("date").value;
             const time = document.getElementById("time").value;
             const amount = parseFloat(document.getElementById("amount").value);
@@ -185,42 +182,35 @@
             });
 
             const data = await res.json();
-
-            const formatCurrency = (value) => {
-                return '£' + Number(value).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-            };
+            document.getElementById("loading").style.display = "none";
 
             if (data.error) {
                 document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
             } else {
+                let bankLine, oceanLine, diffLine;
+
+                if (data.mode === "buy") {
+                    bankLine = `<p>💸 <strong>Your bank/broker charged you:</strong> £${data.bank_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
+                    oceanLine = `<p>💡 <strong>Ocean would have charged you:</strong> £${data.company_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
+                    diffLine = `<p>💰 <strong>You could have saved:</strong> £${data.difference.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
+                } else {
+                    bankLine = `<p>💸 <strong>Your bank/broker gave you:</strong> £${data.bank_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
+                    oceanLine = `<p>🚀 <strong>Ocean would have given you:</strong> £${data.company_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
+                    diffLine = `<p>😬 <strong>You missed out on:</strong> £${data.difference.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>`;
+                }
+
                 document.getElementById("results").innerHTML = `
                     <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
                     <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
-                    <p>💸 <strong>Your bank/broker gave you:</strong> ${formatCurrency(data.bank_value)}</p>
-                    <p>🚀 <strong>Ocean would have given you:</strong> ${formatCurrency(data.company_value)}</p>
-                    <p>😬 <strong>You missed out on:</strong> ${formatCurrency(data.difference)}</p>
+                    ${bankLine}
+                    ${oceanLine}
+                    ${diffLine}
                     <p>📊 <strong>Bank/broker margin:</strong> ${data.spread_percent}%</p>
-                    <p>🔥 <strong>Estimated annual savings with Ocean:</strong> ${formatCurrency(data.annual_savings)}</p>
-                    <br>
-                    <a href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF" target="_blank">
-                        <button style="margin-top: 10px; width: 100%; background-color: #20DED6; color: #111132; font-weight: bold; padding: 12px; border: none; border-radius: 5px; cursor: pointer;">
-                            🔓 Open Your Free Account
-                        </button>
-                    </a>
-                    <p style="margin-top: 20px; text-align: center;">
-                        💬 <strong>Want help understanding your results?</strong><br>
-                        <a href="mailto:info@oceancapitalexchange.com?subject=FX%20Callback%20Request" style="color:#20DED6; text-decoration:underline;">
-                            Request a callback
-                        </a>
-                    </p>
+                    <p>🔥 <strong>Estimated annual savings with Ocean:</strong> £${data.annual_savings.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <p>🔓 <a href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF" target="_blank"><strong>Open a free account to access your savings now — no obligation to trade</strong></a></p>
+                    <p>💬 <a href="mailto:info@oceancapitalexchange.com?subject=Callback Request">Want help understanding your results? Request a callback</a></p>
                 `;
             }
-
-            compareButton.disabled = false;
-            compareButton.innerText = "Compare";
         });
     </script>
 </body>
