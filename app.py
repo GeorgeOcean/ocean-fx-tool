@@ -42,7 +42,7 @@ def save_tokens(tokens):
     for token, used in tokens.items():
         sheet.append_row([token, str(used).upper()])
 
-# --- Log Submission ---
+# --- Logging ---
 def log_to_google_sheet(data):
     sheet = get_sheet(LOG_SHEET_TAB)
     sheet.append_row([
@@ -99,19 +99,24 @@ def compare():
     if "rates" not in json_data or from_currency not in json_data["rates"] or to_currency not in json_data["rates"]:
         return jsonify({"error": "Could not find a rate for this date or currency."}), 400
 
-    eur_to_from = json_data["rates"][from_currency]
-    eur_to_to = json_data["rates"][to_currency]
-    actual_rate = eur_to_to / eur_to_from
+    rates = json_data["rates"]
+    # 🌍 Proper FX rate calculation with EUR base logic
+    if from_currency == "EUR":
+        actual_rate = rates[to_currency]
+    elif to_currency == "EUR":
+        actual_rate = 1 / rates[from_currency]
+    else:
+        actual_rate = rates[to_currency] / rates[from_currency]
 
     if mode == "sell":
         bank_value = amount * bank_rate
         company_value = amount * actual_rate
+        difference = round(company_value - bank_value, 2)
     else:  # buy
         bank_value = amount / bank_rate
         company_value = amount / actual_rate
+        difference = round(bank_value - company_value, 2)
 
-    # ✅ FIXED: correct savings calculation
-    difference = round(bank_value - company_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
@@ -157,7 +162,8 @@ def generate_tokens():
 
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
-# --- Run ---
+# --- Run Server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
