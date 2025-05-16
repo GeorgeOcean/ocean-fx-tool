@@ -20,7 +20,6 @@
         }
         header img {
             max-width: 100%;
-            max-width: 600px;
             height: auto;
             display: block;
             margin: 0 auto;
@@ -66,6 +65,33 @@
         }
         .inline-row > div {
             flex: 1;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #20DED6;
+            color: #111132;
+            font-weight: bold;
+            padding: 12px 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            transition: background 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background-color: #1ec5bf;
+        }
+
+        .cta-button.secondary {
+            background-color: transparent;
+            color: #20DED6;
+            border: 2px solid #20DED6;
+        }
+
+        .cta-button.secondary:hover {
+            background-color: #20DED6;
+            color: #111132;
         }
     </style>
 </head>
@@ -186,21 +212,23 @@
 
                 document.getElementById("results").innerHTML = resultText + `
                     <div style="margin-top: 25px; padding: 15px; background: #1e1e3f; border: 1px solid #333; border-radius: 5px;">
-                        <p style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">
-                            🔓 <a href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF" target="_blank" style="color: #20DED6; text-decoration: none;">
-                                Open a free account to access your savings now
-                            </a>
-                        </p>
-                        <p style="font-size: 14px; margin-top: 0; margin-bottom: 10px;">No obligation to trade.</p>
-                        <p>💬 <a href="mailto:info@oceancapitalexchange.com?subject=Callback Request" style="color: #20DED6; text-decoration: underline;">
-                            Want help understanding your results? Request a callback
-                        </a></p>
-                    </div>`;
+                        <a href="https://apply.ebury.com/sfdc/servlet/SmartForm.html?formCode=currency-services&brand=OCF"
+                           target="_blank" class="cta-button">
+                           🔓 Open a free account to access your savings now
+                        </a>
+                        <p style="font-size: 14px; margin-top: 5px; margin-bottom: 15px; color: #ccc;">No obligation to trade.</p>
+                        <a href="mailto:info@oceancapitalexchange.com?subject=Callback Request"
+                           class="cta-button secondary">
+                           💬 Want help understanding your results? Request a callback
+                        </a>
+                    </div>
+                `;
             }
         });
     </script>
 </body>
 </html>
+
 
 
 
