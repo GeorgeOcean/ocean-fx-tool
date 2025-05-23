@@ -92,6 +92,7 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
+    # Get FX rates from API
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
     json_data = response.json()
@@ -100,7 +101,8 @@ def compare():
         return jsonify({"error": "Could not find a rate for this date or currency."}), 400
 
     rates = json_data["rates"]
-    # 🌍 Proper FX rate calculation with EUR base logic
+
+    # 🌍 Get actual rate in FROM → TO direction
     if from_currency == "EUR":
         actual_rate = rates[to_currency]
     elif to_currency == "EUR":
@@ -108,18 +110,19 @@ def compare():
     else:
         actual_rate = rates[to_currency] / rates[from_currency]
 
-    if mode == "sell":
-        bank_value = amount * bank_rate
-        company_value = amount * actual_rate
-        difference = round(company_value - bank_value, 2)
-    else:  # buy
-        bank_value = amount / bank_rate
-        company_value = amount / actual_rate
-        difference = round(bank_value - company_value, 2)
+    # 🔁 Normalize rates if in "buy" mode (invert both)
+    if mode == "buy":
+        bank_rate = 1 / bank_rate
+        actual_rate = 1 / actual_rate
 
-    spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
+    # 💰 Value calculations
+    bank_value = amount * bank_rate
+    company_value = amount * actual_rate
+    difference = round(company_value - bank_value, 2)
+    spread_pct = round(((actual_rate - bank_rate) / bank_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
+    # ✅ Mark token used
     tokens[token] = True
     save_tokens(tokens)
 
@@ -129,7 +132,7 @@ def compare():
         "to": to_currency,
         "mode": mode,
         "amount": amount,
-        "bankRate": bank_rate,
+        "bankRate": round(bank_rate, 6),
         "company_rate": round(actual_rate, 6),
         "bank_value": round(bank_value, 2),
         "company_value": round(company_value, 2),
@@ -138,7 +141,9 @@ def compare():
         "annual_savings": annual_savings
     }
 
+    # 📋 Log to Google Sheets
     log_to_google_sheet(result)
+
     return jsonify(result)
 
 @app.route('/generate-tokens')
@@ -166,4 +171,3 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
