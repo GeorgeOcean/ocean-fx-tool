@@ -11,6 +11,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 app = Flask(__name__)
 
 # --- Constants ---
+API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'
 LOG_SHEET_TAB = 'Sheet1'
@@ -72,8 +73,7 @@ def home():
     if tokens[token]:
         return "This token has already been used.", 403
 
-    today = datetime.today().strftime('%Y-%m-%d')
-    return render_template('index.html', token=token, max_date=today)
+    return render_template('index.html', token=token)
 
 @app.route('/compare', methods=['POST'])
 def compare():
@@ -92,33 +92,32 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # Try fetching the rate for the chosen date
-    url = f"https://api.exchangerate.host/{date}?base={from_currency}&symbols={to_currency}"
+    # Get FX rates from API
+    url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
     json_data = response.json()
 
-    # If no rate, fallback to latest
-    if "rates" not in json_data or to_currency not in json_data["rates"]:
-        response = requests.get(f"https://api.exchangerate.host/latest?base={from_currency}&symbols={to_currency}")
-        json_data = response.json()
+    if "rates" not in json_data or from_currency not in json_data["rates"] or to_currency not in json_data["rates"]:
+        return jsonify({"error": "Could not find a rate for this date or currency."}), 400
 
-    # Still missing? Give up
-    if "rates" not in json_data or to_currency not in json_data["rates"]:
-        return jsonify({
-            "error": f"Could not find any exchange rate for {from_currency} to {to_currency}."
-        }), 400
+    rates = json_data["rates"]
+    if from_currency == "EUR":
+        actual_rate = rates[to_currency]
+    elif to_currency == "EUR":
+        actual_rate = 1 / rates[from_currency]
+    else:
+        actual_rate = rates[to_currency] / rates[from_currency]
 
-    ocean_rate = json_data["rates"][to_currency]
+    if mode == "sell":
+        bank_value = amount * bank_rate
+        company_value = amount * actual_rate
+        difference = round(company_value - bank_value, 2)
+    else:
+        bank_value = amount / bank_rate
+        company_value = amount / actual_rate
+        difference = round(bank_value - company_value, 2)
 
-    # Normalize direction
-    if (bank_rate > 5 and ocean_rate < 1) or (bank_rate > 1.3 and ocean_rate < 1):
-        bank_rate = 1 / bank_rate
-
-    # Value calculations
-    bank_value = amount * bank_rate
-    company_value = amount * ocean_rate
-    difference = round(company_value - bank_value, 2)
-    spread_pct = round(((ocean_rate - bank_rate) / bank_rate) * 100, 2)
+    spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
     tokens[token] = True
@@ -130,8 +129,8 @@ def compare():
         "to": to_currency,
         "mode": mode,
         "amount": amount,
-        "bankRate": round(bank_rate, 6),
-        "company_rate": round(ocean_rate, 6),
+        "bankRate": bank_rate,
+        "company_rate": round(actual_rate, 6),
         "bank_value": round(bank_value, 2),
         "company_value": round(company_value, 2),
         "difference": difference,
@@ -167,4 +166,5 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
