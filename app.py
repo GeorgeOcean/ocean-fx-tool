@@ -92,28 +92,25 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # First attempt: rate on the selected date
+    # Try fetching the rate for the chosen date
     url = f"https://api.exchangerate.host/{date}?base={from_currency}&symbols={to_currency}"
     response = requests.get(url)
     json_data = response.json()
 
-    # If no rate found, fallback to latest available rate
+    # If no rate, fallback to latest
     if "rates" not in json_data or to_currency not in json_data["rates"]:
-        fallback_url = f"https://api.exchangerate.host/latest?base={from_currency}&symbols={to_currency}"
-        response = requests.get(fallback_url)
+        response = requests.get(f"https://api.exchangerate.host/latest?base={from_currency}&symbols={to_currency}")
         json_data = response.json()
-        used_fallback = True
-    else:
-        used_fallback = False
 
+    # Still missing? Give up
     if "rates" not in json_data or to_currency not in json_data["rates"]:
         return jsonify({
-            "error": f"Could not find any available rate for {from_currency} to {to_currency}."
+            "error": f"Could not find any exchange rate for {from_currency} to {to_currency}."
         }), 400
 
     ocean_rate = json_data["rates"][to_currency]
 
-    # Normalize direction if needed
+    # Normalize direction
     if (bank_rate > 5 and ocean_rate < 1) or (bank_rate > 1.3 and ocean_rate < 1):
         bank_rate = 1 / bank_rate
 
@@ -139,8 +136,7 @@ def compare():
         "company_value": round(company_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
-        "annual_savings": annual_savings,
-        "used_fallback": used_fallback
+        "annual_savings": annual_savings
     }
 
     log_to_google_sheet(result)
@@ -171,5 +167,4 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
 
