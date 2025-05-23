@@ -20,7 +20,6 @@
         }
         header img {
             max-width: 100%;
-            max-width: 600px;
             height: auto;
             display: block;
             margin: 0 auto;
@@ -79,17 +78,14 @@
             text-decoration: none;
             transition: background 0.3s ease;
         }
-
         .cta-button:hover {
             background-color: #1ec5bf;
         }
-
         .cta-button.secondary {
             background-color: transparent;
             color: #20DED6;
             border: 2px solid #20DED6;
         }
-
         .cta-button.secondary:hover {
             background-color: #20DED6;
             color: #111132;
@@ -114,36 +110,73 @@
                     </select>
                 </div>
             </div>
+
             <select id="from" required>
                 <option value="">From Currency</option>
-                <option value="GBP">GBP</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="ZAR">ZAR</option>
-                <option value="AED">AED</option>
+                <option value="AED">AED - United Arab Emirates Dirham</option>
+                <option value="AUD">AUD - Australian Dollar</option>
+                <option value="CAD">CAD - Canadian Dollar</option>
+                <option value="CHF">CHF - Swiss Franc</option>
+                <option value="CNY">CNY - Chinese Yuan</option>
+                <option value="DKK">DKK - Danish Krone</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="HKD">HKD - Hong Kong Dollar</option>
+                <option value="INR">INR - Indian Rupee</option>
+                <option value="JPY">JPY - Japanese Yen</option>
+                <option value="NOK">NOK - Norwegian Krone</option>
+                <option value="NZD">NZD - New Zealand Dollar</option>
+                <option value="SAR">SAR - Saudi Riyal</option>
+                <option value="SEK">SEK - Swedish Krona</option>
+                <option value="SGD">SGD - Singapore Dollar</option>
+                <option value="TRY">TRY - Turkish Lira</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="ZAR">ZAR - South African Rand</option>
             </select>
+
             <select id="to" required>
                 <option value="">To Currency</option>
-                <option value="GBP">GBP</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="ZAR">ZAR</option>
-                <option value="AED">AED</option>
+                <option value="AED">AED - United Arab Emirates Dirham</option>
+                <option value="AUD">AUD - Australian Dollar</option>
+                <option value="CAD">CAD - Canadian Dollar</option>
+                <option value="CHF">CHF - Swiss Franc</option>
+                <option value="CNY">CNY - Chinese Yuan</option>
+                <option value="DKK">DKK - Danish Krone</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="HKD">HKD - Hong Kong Dollar</option>
+                <option value="INR">INR - Indian Rupee</option>
+                <option value="JPY">JPY - Japanese Yen</option>
+                <option value="NOK">NOK - Norwegian Krone</option>
+                <option value="NZD">NZD - New Zealand Dollar</option>
+                <option value="SAR">SAR - Saudi Riyal</option>
+                <option value="SEK">SEK - Swedish Krona</option>
+                <option value="SGD">SGD - Singapore Dollar</option>
+                <option value="TRY">TRY - Turkish Lira</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="ZAR">ZAR - South African Rand</option>
             </select>
+
             <input type="date" id="date" required>
+
             <select id="time">
                 <option value="">Time of Transaction (optional)</option>
                 <option value="Morning">Morning</option>
                 <option value="Afternoon">Afternoon</option>
                 <option value="Evening">Evening</option>
             </select>
+
             <input type="number" id="bankRate" placeholder="Bank Exchange Rate" step="0.0001" required>
+
             <input type="number" id="annualVolume" placeholder="Estimated Annual FX Volume (£)" min="0" required>
             <small style="color: #aaa;">Enter as a number (e.g. 1000000 for £1 million)</small>
+
             <button type="submit" id="submit-btn">Compare</button>
         </form>
+
         <div id="results"></div>
     </div>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
