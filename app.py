@@ -102,24 +102,24 @@ def compare():
 
     rates = json_data["rates"]
 
-    # 🌍 Get actual rate in FROM → TO direction
+    # 🌍 Get Ocean Capital's rate (from → to)
     if from_currency == "EUR":
-        actual_rate = rates[to_currency]
+        ocean_rate = rates[to_currency]
     elif to_currency == "EUR":
-        actual_rate = 1 / rates[from_currency]
+        ocean_rate = 1 / rates[from_currency]
     else:
-        actual_rate = rates[to_currency] / rates[from_currency]
+        ocean_rate = rates[to_currency] / rates[from_currency]
 
-    # 🔁 Normalize rates if in "buy" mode (invert both)
-    if mode == "buy":
+    # 🔁 Ensure bank_rate is in same direction (from → to)
+    # If user input is likely inverted (e.g., USD/GBP instead of GBP/USD), invert it
+    if (bank_rate > 5 and ocean_rate < 1) or (bank_rate > 1.3 and ocean_rate < 1):
         bank_rate = 1 / bank_rate
-        actual_rate = 1 / actual_rate
 
     # 💰 Value calculations
     bank_value = amount * bank_rate
-    company_value = amount * actual_rate
+    company_value = amount * ocean_rate
     difference = round(company_value - bank_value, 2)
-    spread_pct = round(((actual_rate - bank_rate) / bank_rate) * 100, 2)
+    spread_pct = round(((ocean_rate - bank_rate) / bank_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
     # ✅ Mark token used
@@ -133,7 +133,7 @@ def compare():
         "mode": mode,
         "amount": amount,
         "bankRate": round(bank_rate, 6),
-        "company_rate": round(actual_rate, 6),
+        "company_rate": round(ocean_rate, 6),
         "bank_value": round(bank_value, 2),
         "company_value": round(company_value, 2),
         "difference": difference,
