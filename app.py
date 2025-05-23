@@ -92,30 +92,38 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # ✅ Get rate from exchangerate.host (no API key needed)
+    # First attempt: rate on the selected date
     url = f"https://api.exchangerate.host/{date}?base={from_currency}&symbols={to_currency}"
     response = requests.get(url)
     json_data = response.json()
 
+    # If no rate found, fallback to latest available rate
+    if "rates" not in json_data or to_currency not in json_data["rates"]:
+        fallback_url = f"https://api.exchangerate.host/latest?base={from_currency}&symbols={to_currency}"
+        response = requests.get(fallback_url)
+        json_data = response.json()
+        used_fallback = True
+    else:
+        used_fallback = False
+
     if "rates" not in json_data or to_currency not in json_data["rates"]:
         return jsonify({
-            "error": f"Could not find a rate for {from_currency} to {to_currency} on {date}."
+            "error": f"Could not find any available rate for {from_currency} to {to_currency}."
         }), 400
 
     ocean_rate = json_data["rates"][to_currency]
 
-    # 🔁 Normalize bank rate direction
+    # Normalize direction if needed
     if (bank_rate > 5 and ocean_rate < 1) or (bank_rate > 1.3 and ocean_rate < 1):
         bank_rate = 1 / bank_rate
 
-    # 💰 Value calculations
+    # Value calculations
     bank_value = amount * bank_rate
     company_value = amount * ocean_rate
     difference = round(company_value - bank_value, 2)
     spread_pct = round(((ocean_rate - bank_rate) / bank_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
-    # ✅ Mark token used
     tokens[token] = True
     save_tokens(tokens)
 
@@ -131,7 +139,8 @@ def compare():
         "company_value": round(company_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
-        "annual_savings": annual_savings
+        "annual_savings": annual_savings,
+        "used_fallback": used_fallback
     }
 
     log_to_google_sheet(result)
