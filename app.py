@@ -11,7 +11,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 app = Flask(__name__)
 
 # --- Constants ---
-API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'
 LOG_SHEET_TAB = 'Sheet1'
@@ -92,26 +91,19 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # Get FX rates from API
-    url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
+    # ✅ Get rate from exchangerate.host
+    url = f"https://api.exchangerate.host/{date}?base={from_currency}&symbols={to_currency}"
     response = requests.get(url)
     json_data = response.json()
 
-    if "rates" not in json_data or from_currency not in json_data["rates"] or to_currency not in json_data["rates"]:
-        return jsonify({"error": "Could not find a rate for this date or currency."}), 400
+    if "rates" not in json_data or to_currency not in json_data["rates"]:
+        return jsonify({
+            "error": f"Could not find a rate for {from_currency} to {to_currency} on {date}."
+        }), 400
 
-    rates = json_data["rates"]
+    ocean_rate = json_data["rates"][to_currency]
 
-    # 🌍 Get Ocean Capital's rate (from → to)
-    if from_currency == "EUR":
-        ocean_rate = rates[to_currency]
-    elif to_currency == "EUR":
-        ocean_rate = 1 / rates[from_currency]
-    else:
-        ocean_rate = rates[to_currency] / rates[from_currency]
-
-    # 🔁 Ensure bank_rate is in same direction (from → to)
-    # If user input is likely inverted (e.g., USD/GBP instead of GBP/USD), invert it
+    # 🔁 Ensure both rates are in the same direction
     if (bank_rate > 5 and ocean_rate < 1) or (bank_rate > 1.3 and ocean_rate < 1):
         bank_rate = 1 / bank_rate
 
@@ -171,3 +163,4 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
