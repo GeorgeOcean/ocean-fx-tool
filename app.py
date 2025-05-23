@@ -72,7 +72,8 @@ def home():
     if tokens[token]:
         return "This token has already been used.", 403
 
-    return render_template('index.html', token=token)
+    today = datetime.today().strftime('%Y-%m-%d')
+    return render_template('index.html', token=token, max_date=today)
 
 @app.route('/compare', methods=['POST'])
 def compare():
@@ -91,7 +92,7 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # ✅ Get rate from exchangerate.host
+    # ✅ Get rate from exchangerate.host (no API key needed)
     url = f"https://api.exchangerate.host/{date}?base={from_currency}&symbols={to_currency}"
     response = requests.get(url)
     json_data = response.json()
@@ -103,7 +104,7 @@ def compare():
 
     ocean_rate = json_data["rates"][to_currency]
 
-    # 🔁 Ensure both rates are in the same direction
+    # 🔁 Normalize bank rate direction
     if (bank_rate > 5 and ocean_rate < 1) or (bank_rate > 1.3 and ocean_rate < 1):
         bank_rate = 1 / bank_rate
 
@@ -133,9 +134,7 @@ def compare():
         "annual_savings": annual_savings
     }
 
-    # 📋 Log to Google Sheets
     log_to_google_sheet(result)
-
     return jsonify(result)
 
 @app.route('/generate-tokens')
@@ -163,4 +162,5 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
