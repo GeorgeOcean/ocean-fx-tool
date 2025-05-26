@@ -4,75 +4,54 @@ import json
 import os
 import random
 import string
-import sys
 from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
-
-# --- Constants ---
+TOKENS_FILE = 'tokens.json'
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'
-LOG_SHEET_TAB = 'Sheet1'
-TOKENS_TAB = 'Tokens'
+GOOGLE_CREDS_FILE = 'oceanfx-logger-0eefd5ced220.json'
 
-# --- Google Sheets Helpers ---
-def get_sheet(tab_name):
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(
-        json.loads(os.environ["GOOGLE_CREDS_JSON"]),
-        scope
-    )
-    client = gspread.authorize(creds)
-    return client.open(SHEET_NAME).worksheet(tab_name)
-
-# --- Token Management ---
 def load_tokens():
-    sheet = get_sheet(TOKENS_TAB)
-    tokens = {}
-    for row in sheet.get_all_records():
-        tokens[row['token']] = row['used'] == 'TRUE'
-    return tokens
+    if not os.path.exists(TOKENS_FILE):
+        return {}
+    with open(TOKENS_FILE, 'r') as f:
+        return json.load(f)
 
 def save_tokens(tokens):
-    sheet = get_sheet(TOKENS_TAB)
-    sheet.clear()
-    sheet.append_row(["token", "used"])
-    for token, used in tokens.items():
-        sheet.append_row([token, str(used).upper()])
+    with open(TOKENS_FILE, 'w') as f:
+        json.dump(tokens, f)
 
-# --- Logging ---
 def log_to_google_sheet(data):
-    sheet = get_sheet(LOG_SHEET_TAB)
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name(GOOGLE_CREDS_FILE, scope)
+    client = gspread.authorize(creds)
+    sheet = client.open(SHEET_NAME).sheet1
+
     sheet.append_row([
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         data["token"],
         data["from"],
         data["to"],
-        data["mode"],
         data["amount"],
         data["bankRate"],
         data["company_rate"],
-        data["bank_value"],
-        data["company_value"],
         data["difference"],
         data["annual_savings"]
     ])
 
-# --- Routes ---
 @app.route('/')
 def home():
     token = request.args.get('token')
     tokens = load_tokens()
 
-    if not token:
-        return "Missing token.", 403
     if token not in tokens:
-        return "Invalid token.", 403
+        return "Invalid or missing token.", 403
     if tokens[token]:
-        return "This token has already been used.", 403
+        return "This link has already been used.", 403
 
     return render_template('index.html', token=token)
 
@@ -85,71 +64,31 @@ def compare():
     if not token or token not in tokens or tokens[token]:
         return jsonify({"error": "Invalid or used token"}), 403
 
-    mode = data.get("mode", "sell")
-    from_currency = data["from"].upper()
-    to_currency = data["to"].upper()
+    from_currency = data["from"]
+    to_currency = data["to"]
     amount = float(data["amount"])
     bank_rate = float(data["bankRate"])
     date = data["date"]
+    time = data.get("time", "")
     annual_volume = float(data.get("annualVolume", 0))
 
-    headers = {"apikey": API_KEY}
+    url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
+    response = requests.get(url)
+    json_data = response.json()
 
-    # --- First attempt: historical rate ---
-    url = f"https://api.apilayer.com/exchangerates_data/{date}?base={from_currency}&symbols={to_currency}"
-    print(f"\n🔍 Requesting historical rate: {url}")
-    sys.stdout.flush()
-    response = requests.get(url, headers=headers)
-    print("🔍 Status code:", response.status_code)
-    sys.stdout.flush()
-    print("📦 Raw response text:", response.text)
-    sys.stdout.flush()
-
-    try:
-        json_data = response.json()
-    except Exception as e:
-        print("❌ Failed to parse JSON:", str(e))
-        sys.stdout.flush()
-        return jsonify({"error": "Invalid response from FX API"}), 400
-
-    # --- Fallback: latest rate ---
-    if "rates" not in json_data or to_currency not in json_data["rates"]:
-        fallback_url = f"https://api.apilayer.com/exchangerates_data/latest?base={from_currency}&symbols={to_currency}"
-        print(f"⚠️ Falling back to latest rate: {fallback_url}")
-        sys.stdout.flush()
-        response = requests.get(fallback_url, headers=headers)
-        print("🔍 Status code (latest):", response.status_code)
-        sys.stdout.flush()
-        print("📦 Raw response text (latest):", response.text)
-        sys.stdout.flush()
-        try:
-            json_data = response.json()
-        except Exception as e:
-            print("❌ Failed to parse JSON (latest):", str(e))
-            sys.stdout.flush()
-            return jsonify({"error": "Invalid response from FX API (latest)"}), 400
-
-    if "rates" not in json_data or to_currency not in json_data["rates"]:
-        print(f"❌ No rate found for {from_currency} to {to_currency} on {date}")
-        sys.stdout.flush()
+    if "rates" not in json_data or from_currency not in json_data["rates"] or to_currency not in json_data["rates"]:
         return jsonify({"error": "Could not find a rate for this date or currency."}), 400
 
-    actual_rate = json_data["rates"][to_currency]
+    eur_to_from = json_data["rates"][from_currency]
+    eur_to_to = json_data["rates"][to_currency]
+    actual_rate = eur_to_to / eur_to_from
 
-    # --- FX Value Calculations ---
-    if mode == "sell":
-        bank_value = amount * bank_rate
-        company_value = amount * actual_rate
-        difference = round(company_value - bank_value, 2)
-    else:
-        bank_value = amount / bank_rate
-        company_value = amount / actual_rate
-        difference = round(bank_value - company_value, 2)
-
+    market_value = amount * actual_rate
+    bank_value = amount * bank_rate
+    difference = round(market_value - bank_value, 2)
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
-    # --- Mark token used
     tokens[token] = True
     save_tokens(tokens)
 
@@ -157,18 +96,18 @@ def compare():
         "token": token,
         "from": from_currency,
         "to": to_currency,
-        "mode": mode,
         "amount": amount,
         "bankRate": bank_rate,
-        "company_rate": round(actual_rate, 6),
+        "company_rate": round(actual_rate, 4),
         "bank_value": round(bank_value, 2),
-        "company_value": round(company_value, 2),
+        "company_value": round(market_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
         "annual_savings": annual_savings
     }
 
     log_to_google_sheet(result)
+
     return jsonify(result)
 
 @app.route('/generate-tokens')
@@ -179,12 +118,8 @@ def generate_tokens():
 
     tokens = load_tokens()
     new_links = []
-
     for _ in range(10):
-        while True:
-            token = 'prospect' + ''.join(random.choices(string.digits, k=5))
-            if token not in tokens:
-                break
+        token = 'prospect' + ''.join(random.choices(string.digits, k=5))
         tokens[token] = False
         new_links.append(f"https://ocean-fx-tool.onrender.com/?token={token}")
 
@@ -192,9 +127,7 @@ def generate_tokens():
 
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
-# --- Run app ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
-
+    app.run(host="0.0.0.0", port=port, debug=True)
 
