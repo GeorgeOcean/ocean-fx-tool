@@ -5,8 +5,10 @@ import os
 import random
 import string
 from datetime import datetime
+import time
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from gspread.exceptions import APIError
 
 app = Flask(__name__)
 
@@ -44,7 +46,8 @@ def save_tokens(tokens):
 # --- Logging ---
 def log_to_google_sheet(data):
     sheet = get_sheet(LOG_SHEET_TAB)
-    sheet.append_row([
+
+    row = [
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         data["token"],
         data["from"],
@@ -54,7 +57,18 @@ def log_to_google_sheet(data):
         data["company_rate"],
         data["difference"],
         data["annual_savings"]
-    ])
+    ]
+
+    for attempt in range(3):  # Try up to 3 times
+        try:
+            sheet.append_row(row)
+            break
+        except APIError as e:
+            if e.response.status_code == 429:
+                print("⚠️ Rate limit hit, retrying...")
+                time.sleep(3)
+            else:
+                raise
 
 # --- Routes ---
 @app.route('/')
@@ -85,7 +99,7 @@ def compare():
     amount = float(data["amount"])
     bank_rate = float(data["bankRate"])
     date = data["date"]
-    time = data.get("time", "")
+    time_of_day = data.get("time", "")
     annual_volume = float(data.get("annualVolume", 0))
 
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
