@@ -15,11 +15,15 @@ ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'
 GOOGLE_CREDS_FILE = 'oceanfx-logger-0eefd5ced220.json'
 
+# ✅ SAFE: Handles empty or missing tokens file
 def load_tokens():
     if not os.path.exists(TOKENS_FILE):
         return {}
     with open(TOKENS_FILE, 'r') as f:
-        return json.load(f)
+        content = f.read().strip()
+        if not content:
+            return {}
+        return json.loads(content)
 
 def save_tokens(tokens):
     with open(TOKENS_FILE, 'w') as f:
@@ -130,4 +134,3 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
