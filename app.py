@@ -98,18 +98,29 @@ def compare():
     url = f"https://api.apilayer.com/exchangerates_data/{date}?base={from_currency}&symbols={to_currency}"
     print(f"\n🔍 Requesting historical rate: {url}")
     response = requests.get(url, headers=headers)
-    json_data = response.json()
-    print("📦 API response (historical):", json_data)
+    print("🔍 Status code:", response.status_code)
+    print("📦 Raw response text:", response.text)
+
+    try:
+        json_data = response.json()
+    except Exception as e:
+        print("❌ Failed to parse JSON:", str(e))
+        return jsonify({"error": "Invalid response from FX API"}), 400
 
     # --- Fallback: latest rate ---
     if "rates" not in json_data or to_currency not in json_data["rates"]:
         fallback_url = f"https://api.apilayer.com/exchangerates_data/latest?base={from_currency}&symbols={to_currency}"
         print(f"⚠️ Falling back to latest rate: {fallback_url}")
         response = requests.get(fallback_url, headers=headers)
-        json_data = response.json()
-        print("📦 API response (latest):", json_data)
+        print("🔍 Status code (latest):", response.status_code)
+        print("📦 Raw response text (latest):", response.text)
 
-    # --- Still no data? Show error
+        try:
+            json_data = response.json()
+        except Exception as e:
+            print("❌ Failed to parse JSON (latest):", str(e))
+            return jsonify({"error": "Invalid response from FX API (latest)"}), 400
+
     if "rates" not in json_data or to_currency not in json_data["rates"]:
         print(f"❌ No rate found for {from_currency} to {to_currency} on {date}")
         return jsonify({"error": "Could not find a rate for this date or currency."}), 400
