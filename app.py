@@ -4,6 +4,7 @@ import json
 import os
 import random
 import string
+import sys
 from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -97,32 +98,40 @@ def compare():
     # --- First attempt: historical rate ---
     url = f"https://api.apilayer.com/exchangerates_data/{date}?base={from_currency}&symbols={to_currency}"
     print(f"\n🔍 Requesting historical rate: {url}")
+    sys.stdout.flush()
     response = requests.get(url, headers=headers)
     print("🔍 Status code:", response.status_code)
+    sys.stdout.flush()
     print("📦 Raw response text:", response.text)
+    sys.stdout.flush()
 
     try:
         json_data = response.json()
     except Exception as e:
         print("❌ Failed to parse JSON:", str(e))
+        sys.stdout.flush()
         return jsonify({"error": "Invalid response from FX API"}), 400
 
     # --- Fallback: latest rate ---
     if "rates" not in json_data or to_currency not in json_data["rates"]:
         fallback_url = f"https://api.apilayer.com/exchangerates_data/latest?base={from_currency}&symbols={to_currency}"
         print(f"⚠️ Falling back to latest rate: {fallback_url}")
+        sys.stdout.flush()
         response = requests.get(fallback_url, headers=headers)
         print("🔍 Status code (latest):", response.status_code)
+        sys.stdout.flush()
         print("📦 Raw response text (latest):", response.text)
-
+        sys.stdout.flush()
         try:
             json_data = response.json()
         except Exception as e:
             print("❌ Failed to parse JSON (latest):", str(e))
+            sys.stdout.flush()
             return jsonify({"error": "Invalid response from FX API (latest)"}), 400
 
     if "rates" not in json_data or to_currency not in json_data["rates"]:
         print(f"❌ No rate found for {from_currency} to {to_currency} on {date}")
+        sys.stdout.flush()
         return jsonify({"error": "Could not find a rate for this date or currency."}), 400
 
     actual_rate = json_data["rates"][to_currency]
@@ -187,4 +196,5 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
