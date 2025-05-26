@@ -11,7 +11,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 app = Flask(__name__)
 
 # --- Constants ---
-API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'  # Your Apilayer API key
+API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'
 LOG_SHEET_TAB = 'Sheet1'
@@ -92,23 +92,30 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # --- Apilayer (Exchangerates Data) Request ---
+    # --- Primary API request (historical) ---
     url = f"https://api.apilayer.com/exchangerates_data/{date}?base={from_currency}&symbols={to_currency}"
-    headers = { "apikey": API_KEY }
+    headers = {"apikey": API_KEY}
     response = requests.get(url, headers=headers)
     json_data = response.json()
 
+    # --- Fallback to latest if historical fails ---
+    if "rates" not in json_data or to_currency not in json_data["rates"]:
+        fallback_url = f"https://api.apilayer.com/exchangerates_data/latest?base={from_currency}&symbols={to_currency}"
+        response = requests.get(fallback_url, headers=headers)
+        json_data = response.json()
+
+    # --- Still no data? Return error
     if "rates" not in json_data or to_currency not in json_data["rates"]:
         return jsonify({"error": "Could not find a rate for this date or currency."}), 400
 
     actual_rate = json_data["rates"][to_currency]
 
-    # --- FX Value Calculations ---
+    # --- Value calculations ---
     if mode == "sell":
         bank_value = amount * bank_rate
         company_value = amount * actual_rate
         difference = round(company_value - bank_value, 2)
-    else:
+    else:  # buy
         bank_value = amount / bank_rate
         company_value = amount / actual_rate
         difference = round(bank_value - company_value, 2)
@@ -116,7 +123,7 @@ def compare():
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
-    # --- Mark token used and save ---
+    # --- Mark token as used and save
     tokens[token] = True
     save_tokens(tokens)
 
@@ -159,8 +166,9 @@ def generate_tokens():
 
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
-# --- Run Server (Render compatible) ---
+# --- Run app on Render-compatible host/port ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
