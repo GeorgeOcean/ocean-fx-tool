@@ -92,30 +92,36 @@ def compare():
     date = data["date"]
     annual_volume = float(data.get("annualVolume", 0))
 
-    # --- Primary API request (historical) ---
-    url = f"https://api.apilayer.com/exchangerates_data/{date}?base={from_currency}&symbols={to_currency}"
     headers = {"apikey": API_KEY}
+
+    # --- First attempt: historical rate ---
+    url = f"https://api.apilayer.com/exchangerates_data/{date}?base={from_currency}&symbols={to_currency}"
+    print(f"\n🔍 Requesting historical rate: {url}")
     response = requests.get(url, headers=headers)
     json_data = response.json()
+    print("📦 API response (historical):", json_data)
 
-    # --- Fallback to latest if historical fails ---
+    # --- Fallback: latest rate ---
     if "rates" not in json_data or to_currency not in json_data["rates"]:
         fallback_url = f"https://api.apilayer.com/exchangerates_data/latest?base={from_currency}&symbols={to_currency}"
+        print(f"⚠️ Falling back to latest rate: {fallback_url}")
         response = requests.get(fallback_url, headers=headers)
         json_data = response.json()
+        print("📦 API response (latest):", json_data)
 
-    # --- Still no data? Return error
+    # --- Still no data? Show error
     if "rates" not in json_data or to_currency not in json_data["rates"]:
+        print(f"❌ No rate found for {from_currency} to {to_currency} on {date}")
         return jsonify({"error": "Could not find a rate for this date or currency."}), 400
 
     actual_rate = json_data["rates"][to_currency]
 
-    # --- Value calculations ---
+    # --- FX Value Calculations ---
     if mode == "sell":
         bank_value = amount * bank_rate
         company_value = amount * actual_rate
         difference = round(company_value - bank_value, 2)
-    else:  # buy
+    else:
         bank_value = amount / bank_rate
         company_value = amount / actual_rate
         difference = round(bank_value - company_value, 2)
@@ -123,7 +129,7 @@ def compare():
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
-    # --- Mark token as used and save
+    # --- Mark token used
     tokens[token] = True
     save_tokens(tokens)
 
@@ -166,7 +172,7 @@ def generate_tokens():
 
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
-# --- Run app on Render-compatible host/port ---
+# --- Run app ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
