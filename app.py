@@ -101,6 +101,7 @@ def compare():
     date = data["date"]
     time_of_day = data.get("time", "")
     annual_volume = float(data.get("annualVolume", 0))
+    mode = data.get("mode", "sell")
 
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
@@ -113,9 +114,16 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
-    market_value = amount * actual_rate
-    bank_value = amount * bank_rate
-    difference = round(market_value - bank_value, 2)
+    # ✅ Correct handling of mode
+    if mode == "sell":
+        company_value = amount * actual_rate
+        bank_value = amount * bank_rate
+        difference = round(company_value - bank_value, 2)
+    else:  # buy
+        company_value = amount / actual_rate
+        bank_value = amount / bank_rate
+        difference = round(bank_value - company_value, 2)
+
     spread_pct = round(((actual_rate - bank_rate) / actual_rate) * 100, 2)
     annual_savings = round((difference / amount) * annual_volume, 2) if amount > 0 else 0
 
@@ -126,11 +134,12 @@ def compare():
         "token": token,
         "from": from_currency,
         "to": to_currency,
+        "mode": mode,
         "amount": amount,
         "bankRate": bank_rate,
         "company_rate": round(actual_rate, 4),
         "bank_value": round(bank_value, 2),
-        "company_value": round(market_value, 2),
+        "company_value": round(company_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
         "annual_savings": annual_savings
