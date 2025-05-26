@@ -9,32 +9,41 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
-TOKENS_FILE = 'tokens.json'
+
 API_KEY = '422b1b69ad8a1363ecec5ce73492f23e'
 ADMIN_SECRET = 'oceankey'
 SHEET_NAME = 'FX Submissions'
-GOOGLE_CREDS_FILE = 'oceanfx-logger-0eefd5ced220.json'
+LOG_SHEET_TAB = 'Sheet1'
+TOKENS_TAB = 'Tokens'
 
-# ✅ SAFE: Handles empty or missing tokens file
+# --- Google Sheets Helpers ---
+def get_sheet(tab_name):
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        json.loads(os.environ["GOOGLE_CREDS_JSON"]),
+        scope
+    )
+    client = gspread.authorize(creds)
+    return client.open(SHEET_NAME).worksheet(tab_name)
+
+# --- Token Management ---
 def load_tokens():
-    if not os.path.exists(TOKENS_FILE):
-        return {}
-    with open(TOKENS_FILE, 'r') as f:
-        content = f.read().strip()
-        if not content:
-            return {}
-        return json.loads(content)
+    sheet = get_sheet(TOKENS_TAB)
+    tokens = {}
+    for row in sheet.get_all_records():
+        tokens[row['token']] = row['used'] == 'TRUE'
+    return tokens
 
 def save_tokens(tokens):
-    with open(TOKENS_FILE, 'w') as f:
-        json.dump(tokens, f)
+    sheet = get_sheet(TOKENS_TAB)
+    sheet.clear()
+    sheet.append_row(["token", "used"])
+    for token, used in tokens.items():
+        sheet.append_row([token, str(used).upper()])
 
+# --- Logging ---
 def log_to_google_sheet(data):
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(GOOGLE_CREDS_FILE, scope)
-    client = gspread.authorize(creds)
-    sheet = client.open(SHEET_NAME).sheet1
-
+    sheet = get_sheet(LOG_SHEET_TAB)
     sheet.append_row([
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         data["token"],
@@ -47,15 +56,18 @@ def log_to_google_sheet(data):
         data["annual_savings"]
     ])
 
+# --- Routes ---
 @app.route('/')
 def home():
     token = request.args.get('token')
     tokens = load_tokens()
 
+    if not token:
+        return "Missing token.", 403
     if token not in tokens:
-        return "Invalid or missing token.", 403
+        return "Invalid token.", 403
     if tokens[token]:
-        return "This link has already been used.", 403
+        return "This token has already been used.", 403
 
     return render_template('index.html', token=token)
 
@@ -122,8 +134,12 @@ def generate_tokens():
 
     tokens = load_tokens()
     new_links = []
+
     for _ in range(10):
-        token = 'prospect' + ''.join(random.choices(string.digits, k=5))
+        while True:
+            token = 'prospect' + ''.join(random.choices(string.digits, k=5))
+            if token not in tokens:
+                break
         tokens[token] = False
         new_links.append(f"https://ocean-fx-tool.onrender.com/?token={token}")
 
@@ -131,6 +147,8 @@ def generate_tokens():
 
     return "<h3>✅ 10 new tokens generated:</h3><ul>" + ''.join(f"<li>{link}</li>" for link in new_links) + "</ul>"
 
+# --- Run Server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port)
+
