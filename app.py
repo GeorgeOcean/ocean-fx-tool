@@ -39,9 +39,10 @@ def load_tokens():
 def save_tokens(tokens):
     sheet = get_sheet(TOKENS_TAB)
     sheet.clear()
-    sheet.append_row(["token", "used"])
+    rows = [["token", "used"]]
     for token, used in tokens.items():
-        sheet.append_row([token, str(used).upper()])
+        rows.append([token, str(used).upper()])
+    sheet.update("A1", rows)  # ✅ bulk write
 
 # --- Logging ---
 def log_to_google_sheet(data):
@@ -176,5 +177,6 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
 
