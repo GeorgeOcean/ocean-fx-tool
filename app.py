@@ -42,7 +42,7 @@ def save_tokens(tokens):
     rows = [["token", "used"]]
     for token, used in tokens.items():
         rows.append([token, str(used).upper()])
-    sheet.update("A1", rows)  # ✅ bulk write
+    sheet.update("A1", rows)
 
 # --- Logging ---
 def log_to_google_sheet(data):
@@ -107,6 +107,7 @@ def compare():
     annual_volume = float(data.get("annualVolume", 0))
     mode = data.get("mode", "sell")
 
+    # Fetch market rate
     url = f"https://api.exchangeratesapi.io/v1/{date}?access_key={API_KEY}&symbols={from_currency},{to_currency}"
     response = requests.get(url)
     json_data = response.json()
@@ -118,6 +119,11 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
+    # 🔁 Auto-correct if bank rate is clearly inverted
+    if (bank_rate > 1.2 and actual_rate < 1) or (bank_rate < 0.9 and actual_rate > 1.1):
+        bank_rate = 1 / bank_rate
+
+    # 💸 FX Calculations
     if mode == "sell":
         company_value = amount * actual_rate
         bank_value = amount * bank_rate
@@ -139,8 +145,8 @@ def compare():
         "to": to_currency,
         "mode": mode,
         "amount": amount,
-        "bankRate": bank_rate,
-        "company_rate": round(actual_rate, 4),
+        "bankRate": round(bank_rate, 6),
+        "company_rate": round(actual_rate, 6),
         "bank_value": round(bank_value, 2),
         "company_value": round(company_value, 2),
         "difference": difference,
@@ -149,7 +155,6 @@ def compare():
     }
 
     log_to_google_sheet(result)
-
     return jsonify(result)
 
 @app.route('/generate-tokens')
@@ -177,6 +182,7 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
