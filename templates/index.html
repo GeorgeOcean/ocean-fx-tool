@@ -211,7 +211,7 @@
             if (data.error) {
                 document.getElementById("results").innerHTML = "<p style='color:#ff6666'><strong>" + data.error + "</strong></p>";
             } else {
-                const currencyCode = mode === 'buy' ? from : to;
+                const currencyCode = mode === 'buy' ? to : to;
                 const formatter = new Intl.NumberFormat('en-UK', {
                     style: 'currency',
                     currency: currencyCode,
