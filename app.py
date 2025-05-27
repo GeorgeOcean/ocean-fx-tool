@@ -52,14 +52,17 @@ def log_to_google_sheet(data):
         data["token"],
         data["from"],
         data["to"],
+        data["mode"],
         data["amount"],
         data["bankRate"],
         data["company_rate"],
+        data["bank_value"],
+        data["company_value"],
         data["difference"],
         data["annual_savings"]
     ]
 
-    for attempt in range(3):  # Try up to 3 times
+    for attempt in range(3):
         try:
             sheet.append_row(row)
             break
@@ -114,12 +117,11 @@ def compare():
     eur_to_to = json_data["rates"][to_currency]
     actual_rate = eur_to_to / eur_to_from
 
-    # ✅ Correct handling of mode
     if mode == "sell":
         company_value = amount * actual_rate
         bank_value = amount * bank_rate
         difference = round(company_value - bank_value, 2)
-    else:  # buy
+    else:
         company_value = amount / actual_rate
         bank_value = amount / bank_rate
         difference = round(bank_value - company_value, 2)
@@ -174,4 +176,5 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
