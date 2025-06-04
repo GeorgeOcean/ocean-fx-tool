@@ -228,7 +228,7 @@
                     <p>📊 <strong>Bank/broker margin:</strong> ${data.spread_percent}%</p>
                     <p>🔥 <strong>Estimated annual savings with Ocean:</strong> ${formatter.format(data.annual_savings)}</p>
                 ` : `
-                    <p>📉 <strong>Your bank/broker's FX Rate:</strong> ${data.bankRate}</p>
+                    <p>📉<strong>Your bank/broker's FX Rate:</strong> ${data.bankRate} ${data.inverted ? `(you entered ${data.originalBankRate})` : ''}</p>
                     <p>📈 <strong>Ocean Capital FX Rate:</strong> ${data.company_rate}</p>
                     <p>💰 <strong>Your bank/broker gave you:</strong> ${formatter.format(data.bank_value)}</p>
                     <p>🧮 <strong>Ocean would have given you:</strong> ${formatter.format(data.company_value)}</p>
