@@ -47,6 +47,7 @@ def save_tokens(tokens):
 # --- Logging ---
 def log_to_google_sheet(data):
     sheet = get_sheet(LOG_SHEET_TAB)
+
     row = [
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         data["token"],
@@ -54,7 +55,6 @@ def log_to_google_sheet(data):
         data["to"],
         data["mode"],
         data["amount"],
-        data["originalBankRate"],
         data["bankRate"],
         data["company_rate"],
         data["bank_value"],
@@ -62,6 +62,7 @@ def log_to_google_sheet(data):
         data["difference"],
         data["annual_savings"]
     ]
+
     for attempt in range(3):
         try:
             sheet.append_row(row)
@@ -101,7 +102,6 @@ def compare():
     to_currency = data["to"]
     amount = float(data["amount"])
     bank_rate = float(data["bankRate"])
-    original_bank_rate = bank_rate  # Capture original for display
     date = data["date"]
     time_of_day = data.get("time", "")
     annual_volume = float(data.get("annualVolume", 0))
@@ -120,8 +120,12 @@ def compare():
     actual_rate = eur_to_to / eur_to_from
 
     # 🔁 Auto-correct if bank rate is clearly inverted
+    original_bank_rate = bank_rate
+    inverted = False
+
     if (bank_rate > 1.2 and actual_rate < 1) or (bank_rate < 0.9 and actual_rate > 1.1):
         bank_rate = 1 / bank_rate
+        inverted = True
 
     # 💸 FX Calculations
     if mode == "sell":
@@ -145,14 +149,15 @@ def compare():
         "to": to_currency,
         "mode": mode,
         "amount": amount,
-        "originalBankRate": round(original_bank_rate, 6),
         "bankRate": round(bank_rate, 6),
         "company_rate": round(actual_rate, 6),
         "bank_value": round(bank_value, 2),
         "company_value": round(company_value, 2),
         "difference": difference,
         "spread_percent": spread_pct,
-        "annual_savings": annual_savings
+        "annual_savings": annual_savings,
+        "originalBankRate": round(original_bank_rate, 6),
+        "inverted": inverted
     }
 
     log_to_google_sheet(result)
@@ -183,6 +188,7 @@ def generate_tokens():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
