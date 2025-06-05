@@ -47,7 +47,6 @@ def save_tokens(tokens):
 # --- Logging ---
 def log_to_google_sheet(data):
     sheet = get_sheet(LOG_SHEET_TAB)
-
     row = [
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         data["token"],
@@ -55,6 +54,7 @@ def log_to_google_sheet(data):
         data["to"],
         data["mode"],
         data["amount"],
+        data["originalBankRate"],
         data["bankRate"],
         data["company_rate"],
         data["bank_value"],
@@ -62,7 +62,6 @@ def log_to_google_sheet(data):
         data["difference"],
         data["annual_savings"]
     ]
-
     for attempt in range(3):
         try:
             sheet.append_row(row)
@@ -102,6 +101,7 @@ def compare():
     to_currency = data["to"]
     amount = float(data["amount"])
     bank_rate = float(data["bankRate"])
+    original_bank_rate = bank_rate  # Capture original for display
     date = data["date"]
     time_of_day = data.get("time", "")
     annual_volume = float(data.get("annualVolume", 0))
@@ -140,20 +140,19 @@ def compare():
     save_tokens(tokens)
 
     result = {
-    "token": token,
-    "from": from_currency,
-    "to": to_currency,
-    "mode": mode,
-    "amount": amount,
-    "bankRate": round(bank_rate, 6),
-    "originalBankRate": round(original_bank_rate, 6),
-    "inverted": inverted,
-    "company_rate": round(actual_rate, 6),
-    "bank_value": round(bank_value, 2),
-    "company_value": round(company_value, 2),
-    "difference": difference,
-    "spread_percent": spread_pct,
-    "annual_savings": annual_savings      
+        "token": token,
+        "from": from_currency,
+        "to": to_currency,
+        "mode": mode,
+        "amount": amount,
+        "originalBankRate": round(original_bank_rate, 6),
+        "bankRate": round(bank_rate, 6),
+        "company_rate": round(actual_rate, 6),
+        "bank_value": round(bank_value, 2),
+        "company_value": round(company_value, 2),
+        "difference": difference,
+        "spread_percent": spread_pct,
+        "annual_savings": annual_savings
     }
 
     log_to_google_sheet(result)
